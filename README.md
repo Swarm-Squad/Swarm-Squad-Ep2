@@ -7,7 +7,7 @@
 
 
 <div align="center">
-  <h2>✨ Features</h2>
+  <h2 align="center">🔬 Research Evolution</h2>
 </div>
 
 * **💬 Real-Time Chat**: Send and receive messages instantly with other users in the chat room.
@@ -33,16 +33,27 @@
 
 1. **Clone the repository and navigate to project folder:**
    ```bash
-   git clone https://github.com/your-username/chatroom.git
-   cd chatroom
+   git clone https://github.com/Sang-Buster/Swarm-Squad-Ep2
+   cd Swarm-Squad-Ep2
    ```
 
-2. **Create a virtual environment:**
+2. **Install uv first:**
    ```bash
-   python -m venv .venv
+   # macOS/Linux
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    ```
 
-3. **Activate the virtual environment:**
+   ```bash
+   # Windows
+   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+   ```
+
+3. **Create a virtual environment:**
+   ```bash
+   uv venv
+   ```
+
+4. **Activate the virtual environment:**
    ```bash
    # macOS/Linux
    source .venv/bin/activate
@@ -53,22 +64,30 @@
    .venv\Scripts\activate
    ```
 
-4. **Install the required packages:**
+5. **Install the required packages:**
    ```bash
-   pip install -r requirements.txt
+   uv pip install -r requirements.txt
    ```
 
-5. **Install pre-commit:**
+6. **Install pre-commit:**
    ```bash
-   pip install pre-commit
+   uv pip install ruff pre-commit
    ```
+   - `ruff` is a super fast Python linter and formatter.
+   - `pre-commit` helps maintain code quality by running automated checks before commits are made.
 
-2. **Install git hooks:**
+7. **Install git hooks:**
    ```bash
    pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push
    ```
 
-3. **Code Linting:**
+   These hooks perform different checks at various stages:
+   - `commit-msg`: Ensures commit messages follow the conventional format
+   - `pre-commit`: Runs Ruff linting and formatting checks before each commit
+   - `pre-push`: Performs final validation before pushing to remote
+  
+
+8. **Code Linting:**
    ```bash
    ruff check
    ruff format
@@ -81,10 +100,11 @@
 
 1. **Run the application:**
    ```bash
-   python web/app.py
+   python src/web/app.py
    ```
-   Open your web browser and navigate to `http://localhost:5000` to join the chat room.
-   **For Admin Panel:** Open your web browser and navigate to `http://localhost:5000/admin`
+
+   - Open your web browser and navigate to `http://localhost:5000` to join the chat room.
+   - **For Admin Panel:** Open your web browser and navigate to `http://localhost:5000/admin`
 
 
 
@@ -94,12 +114,12 @@
 
 1. **Run the server:**
    ```bash
-   python cli/server.py
+   python src/cli/server.py
    ```
 
 2. **Run the client:**
    ```bash
-   python cli/client.py
+   python src/cli/client.py
    ```
 
    - Enter your username when prompted.

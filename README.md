@@ -124,3 +124,19 @@
 
    - Enter your username when prompted.
    - If you are an admin, enter the password when prompted.
+  
+
+<div align="center">
+  <h2>📁 File Structure</h2>
+</div>
+
+```
+📦Swarm-Squad-Ep2
+ ┣ 📂img                              // Readme Assets
+ ┣ 📂lib                              // Supplementary Materials
+ ┣ 📂src                              // Source Code
+ ┃ ┃ ┣ 📂cli
+ ┃ ┃ ┗ 📂web
+ ┣ 📄.gitignore
+ ┗ 📄README.md
+```

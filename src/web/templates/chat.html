@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jztchl'chat room</title>
+    <script src="/static/socket.io.min.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.min.css">
+   <link rel="icon" href="{{ url_for('static', filename='chatroom.png') }}" type="image/x-icon">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2e3192, #1bffff);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #messages {
+            max-height: 85%;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        #messages div {
+            margin-bottom: 5px;
+        }
+
+        .input-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+        }
+
+        input#messageInput {
+            flex: 1;
+            height: 40px;
+            padding: 0 10px;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+        }
+
+        input#imageInput {
+            display: none;
+        }
+
+        label#imageLabel {
+            width: 90px;
+            height: 42px;
+            background-color: #2e3192;
+            color: #fff;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        label#imageLabel:hover {
+            background-color: #1bffff;
+        }
+
+        button {
+            width: 90px;
+            height: 42px;
+            border: none;
+            border-radius: 5px;
+            background-color: #2e3192;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #1bffff;
+        }
+
+        @media (max-width: 600px) {
+            .chat-container {
+                padding: 15px;
+            }
+
+            input#messageInput {
+                height: 35px;
+                padding: 0 10px;
+                font-size: 15px;
+            }
+
+            label#imageLabel, button {
+                width: 80px;
+                height: 37px;
+                font-size: 15px;
+            }
+        }
+        .image-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .image-container .nickname {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .image-container img {
+            max-width: 300px;
+            max-height: 200px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div id="messages"></div>
+        <div class="input-container">
+            <input id="messageInput" autocomplete="off" placeholder="Type a message..."/>
+            <input type="file" id="imageInput" accept="image/*" onchange="sendImage()">
+            <label for="imageInput" id="imageLabel">Image</label>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <script>
+        var socket = io();
+        var nickname = prompt("Please enter your nickname:");
+        while (!nickname || nickname.trim() === "") {
+            nickname = prompt("Nickname cannot be empty. Please enter your nickname:");
+        }
+
+        socket.on('connect', function() {
+            socket.emit('set_nickname', { nickname: nickname });
+            console.log('Connected to server');
+        });
+
+        socket.on('message', function(msg) {
+            var messages = document.getElementById('messages');
+            var message = document.createElement('div');
+            if (msg.type === 'text') {
+                message.textContent = msg.data;
+            } else if (msg.type === 'image') {
+                var imgContainer = document.createElement('div');
+                imgContainer.classList.add('image-container');
+                var nicknameSpan = document.createElement('span');
+                nicknameSpan.classList.add('nickname');
+                nicknameSpan.textContent = msg.data.split(': ')[0] + ':';
+                var img = document.createElement('img');
+                img.src = msg.data.split(': ')[1];
+                imgContainer.appendChild(nicknameSpan);
+                imgContainer.appendChild(img);
+                message.appendChild(imgContainer);
+            }
+            messages.appendChild(message);
+        });
+
+
+        function sendMessage() {
+            var input = document.getElementById('messageInput');
+            var message = input.value.trim();
+            if (message !== '') {
+                socket.emit('message', { type: 'text', data: message });
+                input.value = '';
+            }
+        }
+
+        function sendImage() {
+            var input = document.getElementById('imageInput');
+            var file = input.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    socket.emit('message', { type: 'image', data: e.target.result });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        var messageInput = document.getElementById('messageInput');
+    messageInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+    </script>
+</body>
+</html>

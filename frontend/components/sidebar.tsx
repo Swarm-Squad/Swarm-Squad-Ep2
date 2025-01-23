@@ -1,29 +1,29 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { categories, users } from "@/lib/mock-data"
-import { Hash, Users, LayoutList, User } from "lucide-react"
-import { ThemeToggle } from "./theme-toggle"
-import { CategoryHeader } from "./category-header"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { categories, users } from "@/lib/mock-data";
+import { Hash, Users, LayoutList, User } from "lucide-react";
+import { ThemeToggle } from "./theme-toggle";
+import { CategoryHeader } from "./category-header";
 
 interface SidebarProps {
-  currentRoomId: string
-  onRoomChange: (roomId: string) => void
+  currentRoomId: string;
+  onRoomChange: (roomId: string) => void;
 }
 
 export function Sidebar({ currentRoomId, onRoomChange }: SidebarProps) {
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(
-    Object.fromEntries(categories.map((category) => [category.id, true])),
-  )
+  const [expandedCategories, setExpandedCategories] = useState<
+    Record<string, boolean>
+  >(Object.fromEntries(categories.map((category) => [category.id, true])));
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories((prev) => ({
       ...prev,
       [categoryId]: !prev[categoryId],
-    }))
-  }
+    }));
+  };
 
   return (
     <div className="w-64 border-r border-border flex flex-col h-screen">
@@ -47,7 +47,9 @@ export function Sidebar({ currentRoomId, onRoomChange }: SidebarProps) {
                   {category.rooms.map((room) => (
                     <Button
                       key={room.id}
-                      variant={currentRoomId === room.id ? "secondary" : "ghost"}
+                      variant={
+                        currentRoomId === room.id ? "secondary" : "ghost"
+                      }
                       className="w-full justify-start text-sm pl-4"
                       onClick={() => onRoomChange(room.id)}
                     >
@@ -69,15 +71,19 @@ export function Sidebar({ currentRoomId, onRoomChange }: SidebarProps) {
       </div>
       <ScrollArea className="flex-1">
         <div className="p-4">
-          {users.filter(user => user.roomId === currentRoomId).map((user) => (
-            <div key={user.id} className="flex items-center space-x-3 p-2">
-              <div className="relative">
-                <User className="h-5 w-5 text-gray-500" />
-                <div className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ${user.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`} />
+          {users
+            .filter((user) => user.roomId === currentRoomId)
+            .map((user) => (
+              <div key={user.id} className="flex items-center space-x-3 p-2">
+                <div className="relative">
+                  <User className="h-5 w-5 text-gray-500" />
+                  <div
+                    className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ${user.status === "online" ? "bg-green-500" : "bg-gray-400"}`}
+                  />
+                </div>
+                <span className="text-sm">{user.name}</span>
               </div>
-              <span className="text-sm">{user.name}</span>
-            </div>
-          ))}
+            ))}
         </div>
       </ScrollArea>
       <div className="border-t border-border">
@@ -90,6 +96,5 @@ export function Sidebar({ currentRoomId, onRoomChange }: SidebarProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

@@ -15,7 +15,7 @@ repos:
       stages: [commit-msg]
     - id: frontend-lint
       name: Frontend lint
-      entry: bash -c 'cd frontend && npm run lint'
+      entry: bash -c 'cd frontend && npm run lint && npm run format'
       language: system
       files: ^frontend/
       pass_filenames: false

@@ -30,7 +30,7 @@
 1. **Install Node.js using nvm:**
    ```bash
    # Install nvm
-   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
    
    # Reload shell configuration
    source ~/.bashrc  # or source ~/.zshrc

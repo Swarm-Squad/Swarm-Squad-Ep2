@@ -93,7 +93,8 @@
 
 4. **Run the server:**
    ```bash
-   uvicorn src.app:app --reload
+   cd backend
+   uv run app.py
    ```
    The backend API will be available at `http://localhost:8000`
 
@@ -123,10 +124,32 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre
 </div>
 
 ```
-📦 Swarm-Squad-Ep2
-├── 🎨 frontend/
-├── 🔧 backend/
-├── .gitignore
-├── LICENSE
-└── README.md
+📦Swarm-Squad-Ep2
+ ┣ 📂README.assets
+ ┃ ┗ 📄banner.png
+ ┣ 📂backend
+ ┃ ┣ 📄message_templates.py
+ ┃ ┣ 📄requirements.txt
+ ┃ ┣ 📄vehicle_simulator.py
+ ┃ ┗ 📄websocket_server.py
+ ┣ 📂frontend
+ ┃ ┣ 📂app
+ ┃ ┣ 📂components
+ ┃ ┣ 📂hooks
+ ┃ ┣ 📂lib
+ ┃ ┣ 📂public
+ ┃ ┣ 📄.eslintrc.json
+ ┃ ┣ 📄components.json
+ ┃ ┣ 📄next-env.d.ts
+ ┃ ┣ 📄next.config.mjs
+ ┃ ┣ 📄package-lock.json
+ ┃ ┣ 📄package.json
+ ┃ ┣ 📄postcss.config.mjs
+ ┃ ┣ 📄tailwind.config.ts
+ ┃ ┗ 📄tsconfig.json
+ ┣ 📄.gitignore
+ ┣ 📄.pre-commit-config.yaml
+ ┣ 📄.pre-commit_msg_template.py
+ ┣ 📄LICENSE
+ ┗ 📄README.md
 ```

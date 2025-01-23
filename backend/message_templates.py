@@ -1,11 +1,18 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from pydantic import BaseModel, Field
+
 
 class MessageTemplate(BaseModel):
     template: str = Field(..., description="The message template with placeholders")
-    variables: Dict[str, Any] = Field(default_factory=dict, description="Dictionary of variables to fill in the template")
-    highlight_fields: list[str] = Field(default_factory=list, description="List of fields to be highlighted in the UI")
-    
+    variables: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Dictionary of variables to fill in the template",
+    )
+    highlight_fields: list[str] = Field(
+        default_factory=list, description="List of fields to be highlighted in the UI"
+    )
+
     def generate_message(self) -> str:
         """Generate a message by filling the template with provided variables"""
         try:
@@ -18,6 +25,7 @@ class MessageTemplate(BaseModel):
     def get_highlight_fields(self) -> list[str]:
         """Get the list of fields that should be highlighted in the UI"""
         return self.highlight_fields
+
 
 # Example usage:
 # template = MessageTemplate(
@@ -32,4 +40,4 @@ class MessageTemplate(BaseModel):
 #         "battery": 80.0
 #     }
 # )
-# message = template.generate_message() 
+# message = template.generate_message()

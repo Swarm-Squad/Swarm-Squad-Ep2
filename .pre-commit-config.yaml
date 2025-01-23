@@ -5,6 +5,7 @@ repos:
     - id: ruff
       args: [--fix]
     - id: ruff-format
+      files: ^backend/
 
 - repo: local
   hooks:

@@ -63,9 +63,9 @@ class Vehicle:
                 "lat": self.location[0],
                 "lon": self.location[1],
                 "speed": self.speed,
-                "battery": self.battery
+                "battery": self.battery,
             },
-            highlight_fields=["speed", "battery"]
+            highlight_fields=["speed", "battery"],
         )
 
         return {
@@ -73,7 +73,7 @@ class Vehicle:
             "vehicle_id": self.id,
             "message": template.generate_message(),
             "type": "vehicle_update",
-            "highlight_fields": template.get_highlight_fields()
+            "highlight_fields": template.get_highlight_fields(),
         }
 
 
@@ -116,7 +116,7 @@ async def websocket_endpoint(websocket: WebSocket):
         # Start the simulation if it's the first client
         if len(connected_clients) == 1:
             asyncio.create_task(vehicle_simulation())
-        
+
         while True:
             # Keep the connection alive
             data = await websocket.receive_text()
@@ -131,4 +131,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

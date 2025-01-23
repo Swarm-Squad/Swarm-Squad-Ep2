@@ -21,7 +21,7 @@ export function ThemeToggle() {
         className="flex items-center justify-center gap-2 w-full"
       >
         <div className="h-4 w-4" />
-        <span>Theme</span>
+        <span className="invisible">Placeholder</span>
       </Button>
     );
   }

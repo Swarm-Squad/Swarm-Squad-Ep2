@@ -1,142 +1,132 @@
 <div align="center">
-  <a href="https://github.com/Sang-Buster/Swarm-Squad"><img src="img/banner.png?raw=true" /></a>
-  <h1>Episode II: The Digital Dialogue</h1>
+  <a href="https://github.com/Sang-Buster/Swarm-Squad"><img src="README.assets/banner.png?raw=true" /></a>
+  <h1>Swarm Squad - Episode II: The Digital Dialogue</h1>
   <h6><small>A continuation of our journey into real-time communication with enhanced features and user management.</small></h6>
-  <p><b>#Chat Room &emsp; #Real-Time Communication &emsp; #User Management <br/>#Flask &emsp; #Flask-SocketIO &emsp; #Interactive UI</b></p>
+  <p><b>#Chat Room &emsp; #Real-Time Communication &emsp; #Ollama LLMs <br/>#Next.js &emsp; #WebSocket</b></p>
 </div>
-
 
 <div align="center">
-  <h2 align="center">🔬 Research Evolution</h2>
+  <h2>🎨 Frontend (Next.js)</h2>
 </div>
 
-* **💬 Real-Time Chat**: Send and receive messages instantly with other users in the chat room.
-* **🖼️ Image Sharing**: Easily share images with other users by uploading them from your device.
-* **👥 User Management**: The admin panel allows administrators to view connected users, ban, and kick them from the chat room.
-* **🚫 Banned Users List**: The admin panel also displays a list of banned users for easy reference.
-* **📱 Responsive Design**: The application is designed to be responsive, ensuring a great user experience on devices of all sizes.
+### Features
+- 🌗 Dark/Light mode support
+- 📱 Responsive design
+- 🎨 Modern UI with Shadcn/UI components
+- 🔄 Real-time chat interface
+- 🖼️ Image sharing capabilities
+- 👥 User management interface
+- 🚫 Admin panel with ban/kick functionality
 
+### Tech Stack
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- Shadcn/UI Components
+- Socket.io Client
 
-<div align="center">
-  <h2>🔧 Tech Stack</h2>
-</div>
+### Setup & Installation
 
-* **Flask**: A lightweight web framework for Python, used to build the backend of the application.
-* **Flask-SocketIO**: A Flask extension that adds WebSocket support, enabling real-time communication between the server and clients.
-* **JavaScript**: Used to handle user interactions and update the chat interface in real-time.
-* **HTML5 & CSS3**: Used to design and structure the user interface, ensuring a visually appealing and intuitive experience.
-
-
-<div align="center">
-  <h2>🛠️ Setup & Installation</h2>
-</div>
-
-1. **Clone the repository and navigate to project folder:**
+1. **Install Node.js using nvm:**
    ```bash
-   git clone https://github.com/Sang-Buster/Swarm-Squad-Ep2
-   cd Swarm-Squad-Ep2
+   # Install nvm
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+   
+   # Reload shell configuration
+   source ~/.bashrc  # or source ~/.zshrc
+   
+   # Install and use Node.js 22
+   nvm install 22
+   nvm use 22
    ```
 
-2. **Install uv first:**
+2. **Install dependencies:**
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+3. **Run development server:**
+   ```bash
+   npm run dev
+   ```
+   The frontend will be available at `http://localhost:3000`
+
+<div align="center">
+  <h2>🔧 Backend (FastAPI)</h2>
+</div>
+
+### Features
+- 🔌 WebSocket server for real-time communication
+- 🔐 User authentication and session management
+- 📤 File upload handling
+- 👮 Admin controls and user moderation
+- 🗄️ User state management
+
+### Tech Stack
+- FastAPI
+- Python 3.11+
+- WebSockets
+
+### Setup & Installation
+
+1. **Install uv:**
    ```bash
    # macOS/Linux
    curl -LsSf https://astral.sh/uv/install.sh | sh
-   ```
 
-   ```bash
    # Windows
    powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
    ```
 
-3. **Create a virtual environment:**
+2. **Create and activate virtual environment:**
    ```bash
+   cd backend
    uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
-4. **Activate the virtual environment:**
-   ```bash
-   # macOS/Linux
-   source .venv/bin/activate
-   ```
-
-   ```bash
-   # Windows
-   .venv\Scripts\activate
-   ```
-
-5. **Install the required packages:**
+3. **Install dependencies:**
    ```bash
    uv pip install -r requirements.txt
    ```
 
-6. **Install pre-commit:**
+4. **Run the server:**
    ```bash
-   uv pip install ruff pre-commit
+   uvicorn src.app:app --reload
    ```
-   - `ruff` is a super fast Python linter and formatter.
-   - `pre-commit` helps maintain code quality by running automated checks before commits are made.
-
-7. **Install git hooks:**
-   ```bash
-   pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push
-   ```
-
-   These hooks perform different checks at various stages:
-   - `commit-msg`: Ensures commit messages follow the conventional format
-   - `pre-commit`: Runs Ruff linting and formatting checks before each commit
-   - `pre-push`: Performs final validation before pushing to remote
-  
-
-8. **Code Linting:**
-   ```bash
-   ruff check
-   ruff format
-   ```
-
+   The backend API will be available at `http://localhost:8000`
 
 <div align="center">
-  <h2>🌐 Web Usage</h2>
+  <h2>🛠️ Development Tools</h2>
 </div>
 
-1. **Run the application:**
-   ```bash
-   python src/web/app.py
-   ```
+### Code Quality
+```bash
+# Frontend
+npm run lint
+npm run format
 
-   - Open your web browser and navigate to `http://localhost:5000` to join the chat room.
-   - **For Admin Panel:** Open your web browser and navigate to `http://localhost:5000/admin`
+# Backend
+ruff check
+ruff format
+```
 
-
-
-<div align="center">
-  <h2>🖥️ CLI  Usage</h2>
-</div>
-
-1. **Run the server:**
-   ```bash
-   python src/cli/server.py
-   ```
-
-2. **Run the client:**
-   ```bash
-   python src/cli/client.py
-   ```
-
-   - Enter your username when prompted.
-   - If you are an admin, enter the password when prompted.
-  
+### Pre-commit Hooks
+```bash
+uv pip install ruff pre-commit
+pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push
+```
 
 <div align="center">
-  <h2>📁 File Structure</h2>
+  <h2>📁 Project Structure</h2>
 </div>
 
 ```
-📦Swarm-Squad-Ep2
- ┣ 📂img                              // Readme Assets
- ┣ 📂lib                              // Supplementary Materials
- ┣ 📂src                              // Source Code
- ┃ ┃ ┣ 📂cli
- ┃ ┃ ┗ 📂web
- ┣ 📄.gitignore
- ┗ 📄README.md
+📦 Swarm-Squad-Ep2
+├── 🎨 frontend/
+├── 🔧 backend/
+├── .gitignore
+├── LICENSE
+└── README.md
 ```

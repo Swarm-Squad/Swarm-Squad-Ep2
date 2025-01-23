@@ -13,3 +13,9 @@ repos:
       entry: python .pre-commit_msg_template.py
       language: python
       stages: [commit-msg]
+    - id: frontend-lint
+      name: Frontend lint
+      entry: bash -c 'cd frontend && npm run lint'
+      language: system
+      files: ^frontend/
+      pass_filenames: false

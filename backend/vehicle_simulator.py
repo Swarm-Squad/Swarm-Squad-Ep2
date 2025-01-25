@@ -2,11 +2,18 @@ import asyncio
 import random
 from datetime import datetime
 from typing import Dict, List
+from decimal import Decimal
 
+import uvicorn
 from faker import Faker
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from fastapi.encoders import jsonable_encoder
+
 from message_templates import MessageTemplate
+from database import get_db
+from models import Message
 
 app = FastAPI()
 fake = Faker()
@@ -22,6 +29,13 @@ app.add_middleware(
 
 # Store connected clients
 connected_clients: List[WebSocket] = []
+
+
+def convert_decimal_to_float(obj):
+    """Convert Decimal objects to float for JSON serialization"""
+    if isinstance(obj, Decimal):
+        return float(obj)
+    return obj
 
 
 # Simulate vehicle data
@@ -74,6 +88,13 @@ class Vehicle:
             "message": template.generate_message(),
             "type": "vehicle_update",
             "highlight_fields": template.get_highlight_fields(),
+            "state": {
+                "latitude": self.location[0],
+                "longitude": self.location[1],
+                "speed": self.speed,
+                "battery": self.battery,
+                "status": self.status,
+            },
         }
 
 
@@ -81,12 +102,31 @@ class Vehicle:
 vehicles: Dict[str, Vehicle] = {f"V{i}": Vehicle(f"V{i}") for i in range(1, 4)}
 
 
-async def broadcast_to_clients(message: dict):
-    """Broadcast message to all connected clients"""
+async def broadcast_to_clients(message: dict, db: Session):
+    """Broadcast message to all connected clients and store in database"""
+    # Store message in database
+    db_message = Message(
+        vehicle_id=message["vehicle_id"],
+        content=message["message"],
+        timestamp=datetime.fromisoformat(message["timestamp"]),
+        message_type=message["type"],
+        latitude=message["state"]["latitude"],
+        longitude=message["state"]["longitude"],
+        speed=message["state"]["speed"],
+        battery=message["state"]["battery"],
+        status=message["state"]["status"],
+    )
+    db.add(db_message)
+    db.commit()
+
+    # Convert message for JSON serialization
+    json_message = jsonable_encoder(message, custom_encoder={Decimal: float})
+
+    # Broadcast to clients
     disconnected_clients = []
     for client in connected_clients:
         try:
-            await client.send_json(message)
+            await client.send_json(json_message)
         except Exception as e:
             print(f"Error sending to client: {e}")
             disconnected_clients.append(client)
@@ -97,25 +137,41 @@ async def broadcast_to_clients(message: dict):
             connected_clients.remove(client)
 
 
-async def vehicle_simulation():
+async def vehicle_simulation(db: Session):
     """Main simulation loop"""
     while True:
         for vehicle in vehicles.values():
             vehicle.update()
             message = vehicle.to_message()
-            await broadcast_to_clients(message)
+            await broadcast_to_clients(message, db)
         await asyncio.sleep(2)
 
 
+@app.get("/messages")
+async def get_messages(
+    limit: int = 50, vehicle_id: str = None, db: Session = Depends(get_db)
+):
+    """Fetch historical messages with optional filtering"""
+    query = db.query(Message).order_by(Message.timestamp.desc())
+
+    if vehicle_id:
+        query = query.filter(Message.vehicle_id == vehicle_id)
+
+    messages = query.limit(limit).all()
+    return jsonable_encoder(
+        [message.to_dict() for message in messages], custom_encoder={Decimal: float}
+    )
+
+
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
     await websocket.accept()
     connected_clients.append(websocket)
     print(f"New client connected. Total clients: {len(connected_clients)}")
     try:
         # Start the simulation if it's the first client
         if len(connected_clients) == 1:
-            asyncio.create_task(vehicle_simulation())
+            asyncio.create_task(vehicle_simulation(db))
 
         while True:
             # Keep the connection alive
@@ -130,6 +186,4 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)

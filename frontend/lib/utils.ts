@@ -22,14 +22,16 @@ const DISTINCT_COLORS = {
   V5: {
     bg: "#ec4899", // bright pink
     text: "#fdf2f8",
-  }
+  },
 };
 
 export function generateColor(vehicleId: string) {
-  return DISTINCT_COLORS[vehicleId as keyof typeof DISTINCT_COLORS] || {
-    bg: "#6b7280", // fallback gray
-    text: "#f9fafb",
-  };
+  return (
+    DISTINCT_COLORS[vehicleId as keyof typeof DISTINCT_COLORS] || {
+      bg: "#6b7280", // fallback gray
+      text: "#f9fafb",
+    }
+  );
 }
 
 export function cn(...inputs: ClassValue[]) {

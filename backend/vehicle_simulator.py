@@ -3,6 +3,7 @@ import random
 from datetime import datetime
 from typing import Dict
 from decimal import Decimal
+import os
 
 import uvicorn
 from faker import Faker
@@ -13,33 +14,49 @@ from fastapi.encoders import jsonable_encoder
 from contextlib import asynccontextmanager
 
 from message_templates import MessageTemplate
-from database import get_db
+from database import get_db, engine, Base, SessionLocal
 from models import Message
 from websocket_server import WebSocketManager
 
 
-# Simulate vehicle data
+def initialize_database() -> None:
+    """Initialize the database if it doesn't exist."""
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vehicle_sim.db")
+    db_exists = os.path.exists(db_path)
+
+    if not db_exists:
+        print("Database does not exist. Creating tables...")
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created successfully")
+    else:
+        print("Database already exists, skipping table creation")
+
+
 class Vehicle:
+    """Simulates a vehicle with real-time state updates."""
+
     def __init__(self, vehicle_id: str):
+        """Initialize vehicle with random starting values."""
         self.id = vehicle_id
         self.location = (fake.latitude(), fake.longitude())
         self.speed = random.uniform(0, 120)
         self.battery = random.uniform(20, 100)
         self.status = random.choice(["moving", "idle", "charging"])
 
-    def update(self):
-        """Update vehicle state"""
-        self.speed += random.uniform(-5, 5)
-        self.speed = max(0, min(120, self.speed))
-        self.battery -= random.uniform(0, 0.5)
-        self.battery = max(0, self.battery)
-        self.status = (
-            random.choice(["moving", "idle", "charging"])
-            if random.random() < 0.1
-            else self.status
-        )
+    def update(self) -> None:
+        """Update vehicle state with random changes."""
+        # Update speed within bounds
+        self.speed = max(0, min(120, self.speed + random.uniform(-5, 5)))
+
+        # Decrease battery level
+        self.battery = max(0, self.battery - random.uniform(0, 0.5))
+
+        # Occasionally change status
+        if random.random() < 0.1:
+            self.status = random.choice(["moving", "idle", "charging"])
 
     def get_status_description(self) -> str:
+        """Get human-readable status description."""
         return {
             "moving": "is currently in motion",
             "idle": "is stationary",
@@ -47,7 +64,7 @@ class Vehicle:
         }[self.status]
 
     def to_message(self) -> dict:
-        """Convert vehicle state to a structured message using MessageTemplate"""
+        """Convert vehicle state to a structured message."""
         template = MessageTemplate(
             template="Vehicle {id} {status_desc} at coordinates ({lat:.2f}, {lon:.2f}). "
             "It's traveling at {speed:.1f} km/h with {battery:.1f}% battery remaining.",
@@ -78,30 +95,76 @@ class Vehicle:
         }
 
 
-# Initialize global variables
-ws_manager = WebSocketManager()
-fake = Faker()
-vehicles: Dict[str, Vehicle] = {}
+async def broadcast_to_clients(message: dict, db: Session) -> None:
+    """Broadcast message to all connected clients and store in database."""
+    try:
+        # Store message in database
+        db_message = Message(
+            vehicle_id=message["vehicle_id"],
+            content=message["message"],
+            timestamp=datetime.fromisoformat(message["timestamp"]),
+            message_type=message["type"],
+            latitude=message["state"]["latitude"],
+            longitude=message["state"]["longitude"],
+            speed=message["state"]["speed"],
+            battery=message["state"]["battery"],
+            status=message["state"]["status"],
+        )
+        db.add(db_message)
+        db.commit()
+
+        # Convert message for JSON serialization and broadcast
+        json_message = jsonable_encoder(message, custom_encoder={Decimal: float})
+        await ws_manager.broadcast_message(json_message)
+    except Exception as e:
+        print(f"Error in broadcast_to_clients: {e}")
+        db.rollback()
+        raise
+
+
+async def vehicle_simulation(db: Session) -> None:
+    """Main simulation loop for updating and broadcasting vehicle states."""
+    while True:
+        for vehicle in vehicles.values():
+            vehicle.update()
+            message = vehicle.to_message()
+            await broadcast_to_clients(message, db)
+        await asyncio.sleep(2)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Initialize vehicles and setup simulation
-    global vehicles
-    vehicles = {f"V{i}": Vehicle(f"V{i}") for i in range(1, 4)}
-    db = next(get_db())
+    """Lifecycle manager for the FastAPI application."""
+    # Initialize database only if needed
+    initialize_database()
 
-    async def start_simulation():
-        asyncio.create_task(vehicle_simulation(db))
+    # Create database session
+    db = SessionLocal()
 
-    ws_manager.on_first_client_connect = start_simulation
+    try:
+        # Initialize vehicles
+        global vehicles
+        vehicles = {f"V{i}": Vehicle(f"V{i}") for i in range(1, 4)}
 
-    yield
+        # Set up simulation to start on first client connection
+        async def start_simulation():
+            asyncio.create_task(vehicle_simulation(db))
 
-    # Cleanup (if needed)
-    vehicles.clear()
+        ws_manager.on_first_client_connect = start_simulation
+
+        yield
+    finally:
+        # Cleanup
+        db.close()
+        vehicles.clear()
 
 
+# Initialize global variables
+fake = Faker()
+ws_manager = WebSocketManager()
+vehicles: Dict[str, Vehicle] = {}
+
+# Create FastAPI app
 app = FastAPI(lifespan=lifespan)
 
 # Enable CORS
@@ -114,50 +177,11 @@ app.add_middleware(
 )
 
 
-def convert_decimal_to_float(obj):
-    """Convert Decimal objects to float for JSON serialization"""
-    if isinstance(obj, Decimal):
-        return float(obj)
-    return obj
-
-
-async def broadcast_to_clients(message: dict, db: Session):
-    """Broadcast message to all connected clients and store in database"""
-    # Store message in database
-    db_message = Message(
-        vehicle_id=message["vehicle_id"],
-        content=message["message"],
-        timestamp=datetime.fromisoformat(message["timestamp"]),
-        message_type=message["type"],
-        latitude=message["state"]["latitude"],
-        longitude=message["state"]["longitude"],
-        speed=message["state"]["speed"],
-        battery=message["state"]["battery"],
-        status=message["state"]["status"],
-    )
-    db.add(db_message)
-    db.commit()
-
-    # Convert message for JSON serialization and broadcast
-    json_message = jsonable_encoder(message, custom_encoder={Decimal: float})
-    await ws_manager.broadcast_message(json_message)
-
-
-async def vehicle_simulation(db: Session):
-    """Main simulation loop"""
-    while True:
-        for vehicle in vehicles.values():
-            vehicle.update()
-            message = vehicle.to_message()
-            await broadcast_to_clients(message, db)
-        await asyncio.sleep(2)
-
-
 @app.get("/messages")
 async def get_messages(
     limit: int = 50, vehicle_id: str = None, db: Session = Depends(get_db)
-):
-    """Fetch historical messages with optional filtering"""
+) -> list:
+    """Fetch historical messages with optional filtering."""
     query = db.query(Message).order_by(Message.timestamp.desc())
 
     if vehicle_id:
@@ -169,8 +193,9 @@ async def get_messages(
     )
 
 
-# Mount the WebSocket app at the root level
+# Mount the WebSocket app
 app.mount("", ws_manager.app)
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

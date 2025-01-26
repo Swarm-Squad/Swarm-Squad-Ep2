@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 interface VehicleMessage {
-  id?: number; // Make ID optional since WebSocket messages don't have it initially
+  id?: number | string; // Allow both number (DB) and string (WebSocket) IDs
   timestamp: string;
   vehicle_id: string;
   message: string;
@@ -25,6 +25,7 @@ export function useWebSocket() {
   const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const messageCounterRef = useRef(0); // Use ref for message counter
 
   // Fetch historical messages
   const fetchHistoricalMessages = useCallback(async () => {
@@ -37,7 +38,7 @@ export function useWebSocket() {
 
       const historicalMessages = await response.json();
 
-      // Validate message format for historical messages (which should have IDs)
+      // Validate message format for historical messages
       const validMessages = historicalMessages.filter((msg: any) => {
         return (
           msg &&
@@ -48,13 +49,15 @@ export function useWebSocket() {
         );
       });
 
-      setMessages(validMessages);
+      // Only set historical messages if we don't have any messages yet
+      setMessages((currentMessages) =>
+        currentMessages.length === 0 ? validMessages : currentMessages,
+      );
     } catch (error) {
       console.error("Error fetching historical messages:", error);
       setError(
         error instanceof Error ? error.message : "Failed to fetch messages",
       );
-      setMessages([]); // Reset messages on error
     } finally {
       setIsLoading(false);
     }
@@ -81,10 +84,10 @@ export function useWebSocket() {
           typeof data.timestamp === "string" &&
           typeof data.state === "object"
         ) {
-          // Generate a temporary ID for WebSocket messages
+          messageCounterRef.current += 1;
           const messageWithId = {
             ...data,
-            id: `ws-${Date.now()}-${Math.random()}`,
+            id: `${data.vehicle_id}-${Date.now()}-${messageCounterRef.current}`,
           };
           setMessages((prev) => [...prev, messageWithId].slice(-50)); // Keep last 50 messages
         } else {
@@ -118,8 +121,8 @@ export function useWebSocket() {
 
   // Set up WebSocket connection and cleanup
   useEffect(() => {
-    fetchHistoricalMessages();
     const ws = connectWebSocket();
+    fetchHistoricalMessages(); // Fetch historical messages after WebSocket is connected
 
     return () => {
       ws.close();

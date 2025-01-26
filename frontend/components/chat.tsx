@@ -3,10 +3,10 @@ import { messages, users } from "@/lib/mock-data";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { generateColor } from "@/lib/utils";
 import { Car, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface Message {
-  id: string;
+  id: string | number; // Allow both string and number IDs
   content: string;
   timestamp: string;
   userId?: string;
@@ -53,19 +53,27 @@ function colorizeVehicleMessage(
 export function Chat({ roomId }: { roomId: string }) {
   const [allMessages, setAllMessages] = useState<Message[]>([]);
   const { messages: vehicleMessages } = useWebSocket();
+  const messageCounterRef = useRef(0);
 
   useEffect(() => {
     const mockRoomMessages = messages.filter(
       (message) => message.roomId === roomId,
     );
-    const vehicleMsgs = vehicleMessages.map((vm) => ({
-      id: `${vm.vehicle_id}-${vm.timestamp}`,
-      content: vm.message,
-      timestamp: vm.timestamp,
-      roomId,
-      isVehicle: true,
-      vehicleId: vm.vehicle_id,
-    }));
+
+    const vehicleMsgs = vehicleMessages.map((vm) => {
+      messageCounterRef.current += 1;
+      return {
+        // Use the ID from the WebSocket hook if available, otherwise generate one
+        id:
+          vm.id ||
+          `${vm.vehicle_id}-${Date.now()}-${messageCounterRef.current}`,
+        content: vm.message,
+        timestamp: vm.timestamp,
+        roomId,
+        isVehicle: true,
+        vehicleId: vm.vehicle_id,
+      };
+    });
 
     setAllMessages(
       [...mockRoomMessages, ...vehicleMsgs].sort(

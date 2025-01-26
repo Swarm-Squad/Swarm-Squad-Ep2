@@ -5,24 +5,29 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 class WebSocketManager:
+    """Manages WebSocket connections and message broadcasting."""
+
     def __init__(self):
+        """Initialize the WebSocket manager."""
         self.app = FastAPI()
         self.connected_clients: List[WebSocket] = []
         self.on_first_client_connect: Optional[Callable] = None
         self._setup_cors()
         self._setup_websocket_endpoint()
 
-    def _setup_cors(self):
-        # Update CORS settings to be more permissive for development
+    def _setup_cors(self) -> None:
+        """Configure CORS settings for WebSocket server."""
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],  # Allows all origins
+            allow_origins=["*"],  # Configure appropriately in production
             allow_credentials=True,
-            allow_methods=["*"],  # Allows all methods
-            allow_headers=["*"],  # Allows all headers
+            allow_methods=["*"],
+            allow_headers=["*"],
         )
 
-    def _setup_websocket_endpoint(self):
+    def _setup_websocket_endpoint(self) -> None:
+        """Set up the WebSocket endpoint and connection handling."""
+
         @self.app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):
             print("New client connecting...")
@@ -46,12 +51,17 @@ class WebSocketManager:
                 if websocket in self.connected_clients:
                     self.connected_clients.remove(websocket)
 
-    async def broadcast_message(self, message: Dict[str, Any]):
-        """Broadcast a message to all connected clients"""
+    async def broadcast_message(self, message: Dict[str, Any]) -> None:
+        """Broadcast a message to all connected clients.
+
+        Args:
+            message: The message to broadcast to all clients
+        """
         print(
             f"Broadcasting message to {len(self.connected_clients)} clients: {message}"
         )
         disconnected_clients = []
+
         for client in self.connected_clients:
             try:
                 await client.send_json(message)
@@ -64,8 +74,13 @@ class WebSocketManager:
             if client in self.connected_clients:
                 self.connected_clients.remove(client)
 
-    def run(self, host: str = "0.0.0.0", port: int = 8000):
-        """Run the WebSocket server"""
+    def run(self, host: str = "0.0.0.0", port: int = 8000) -> None:
+        """Run the WebSocket server.
+
+        Args:
+            host: The host to bind to
+            port: The port to listen on
+        """
         import uvicorn
 
         print(f"Starting WebSocket server on {host}:{port}")

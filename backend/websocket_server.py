@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Callable, Optional
 
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +8,7 @@ class WebSocketManager:
     def __init__(self):
         self.app = FastAPI()
         self.connected_clients: List[WebSocket] = []
+        self.on_first_client_connect: Optional[Callable] = None
         self._setup_cors()
         self._setup_websocket_endpoint()
 
@@ -27,6 +28,11 @@ class WebSocketManager:
             print("New client connecting...")
             await websocket.accept()
             print("Client connected successfully")
+
+            # Call the callback if this is the first client
+            if len(self.connected_clients) == 0 and self.on_first_client_connect:
+                await self.on_first_client_connect()
+
             self.connected_clients.append(websocket)
             try:
                 while True:

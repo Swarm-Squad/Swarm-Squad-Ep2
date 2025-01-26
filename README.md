@@ -91,7 +91,19 @@
    uv pip install -r requirements.txt
    ```
 
-4. **Run the server:**
+4. **Setup Database:**
+   ```bash
+   # Create alembic migration directory
+   mkdir -p alembic/versions
+   
+   # Generate initial migration
+   alembic revision --autogenerate -m "Create messages table"
+   
+   # Apply migrations
+   alembic upgrade head
+   ```
+
+5. **Run the server:**
    ```bash
    cd backend
    uv run app.py

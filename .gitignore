@@ -7,6 +7,7 @@ backend/**/__pycache__/
 backend/.asv
 backend/.ruff_cache
 backend/.venv/
+backend/*.db
 
 # Frontend dependencies
 frontend/node_modules/

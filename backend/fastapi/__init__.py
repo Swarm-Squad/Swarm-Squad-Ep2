@@ -1,6 +1,13 @@
 from .database import Base, SessionLocal, engine, get_db
-from .models import Entity, EntityType, Room, RoomType
-from .schemas import RoomCreate, RoomResponse
+from .models import Entity, EntityType, Message, MessageType, Room, RoomType
+from .schemas import (
+    EntityCreate,
+    EntityResponse,
+    MessageCreate,
+    MessageResponse,
+    RoomCreate,
+    RoomResponse,
+)
 
 __all__ = [
     "SessionLocal",
@@ -9,8 +16,14 @@ __all__ = [
     "get_db",
     "Room",
     "Entity",
+    "Message",
     "RoomType",
     "EntityType",
+    "MessageType",
     "RoomResponse",
     "RoomCreate",
+    "EntityResponse",
+    "EntityCreate",
+    "MessageResponse",
+    "MessageCreate",
 ]

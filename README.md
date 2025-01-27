@@ -81,6 +81,7 @@
 
 2. **Create and activate virtual environment:**
    ```bash
+   cd backend
    uv venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```

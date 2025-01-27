@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class RoomType(str, Enum):
@@ -36,8 +36,7 @@ class RoomResponse(RoomBase):
     id: str
     messages: List = []
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Entity Schemas
@@ -61,8 +60,7 @@ class EntityResponse(EntityBase):
     status: str
     last_seen: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Message Schemas
@@ -89,8 +87,7 @@ class MessageResponse(MessageBase):
     timestamp: datetime
     state: Optional[VehicleState] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # WebSocket Schemas

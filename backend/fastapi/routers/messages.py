@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 from typing import List
 
-from database import get_db
-from models import Entity, Message, Room
-from schemas import MessageCreate, MessageResponse, MessageType
+from backend.fastapi.database import get_db
+from backend.fastapi.models import Entity, Message, Room
+from backend.fastapi.schemas import MessageCreate, MessageResponse, MessageType
 from sqlalchemy.orm import Session
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -28,7 +28,7 @@ def create_message(message: MessageCreate, db: Session = Depends(get_db)):
         entity_id=message.entity_id,
         content=message.content,
         message_type=message.message_type,
-        timestamp=lambda: datetime.now(timezone.utc),
+        timestamp=datetime.now(timezone.utc),
     )
 
     # If it's a vehicle update, add vehicle state

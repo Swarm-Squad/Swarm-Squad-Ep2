@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from database import get_db
@@ -29,7 +29,7 @@ def create_entity(entity: EntityCreate, db: Session = Depends(get_db)):
         type=entity.type,
         room_id=entity.room_id,
         status="offline",
-        last_seen=datetime.utcnow(),
+        last_seen=datetime.now(timezone.utc),
     )
     db.add(db_entity)
     db.commit()

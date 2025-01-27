@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from database import get_db
@@ -28,7 +28,7 @@ def create_message(message: MessageCreate, db: Session = Depends(get_db)):
         entity_id=message.entity_id,
         content=message.content,
         message_type=message.message_type,
-        timestamp=datetime.utcnow(),
+        timestamp=lambda: datetime.now(timezone.utc),
     )
 
     # If it's a vehicle update, add vehicle state

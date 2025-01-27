@@ -1,6 +1,6 @@
 import asyncio
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Dict
 
@@ -65,7 +65,7 @@ class Vehicle:
         )
 
         return {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "entity_id": self.id,
             "room_id": self.room_id,
             "message": template.generate_message(),
@@ -88,7 +88,7 @@ async def broadcast_to_room(message: dict, db: Session, room_id: str) -> None:
         entity = db.query(Entity).filter(Entity.id == message["entity_id"]).first()
         if entity:
             entity.status = "online"
-            entity.last_seen = datetime.utcnow()
+            entity.last_seen = datetime.now(timezone.utc)
 
         # Store message in database
         db_message = Message(

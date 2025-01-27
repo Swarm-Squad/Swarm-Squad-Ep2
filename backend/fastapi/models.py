@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict
 
@@ -49,7 +49,7 @@ class Entity(Base):
     type = Column(SQLAEnum(EntityType), nullable=False)
     room_id = Column(String, ForeignKey("rooms.id"))
     status = Column(String, default="offline")  # online/offline
-    last_seen = Column(DateTime, default=datetime.utcnow)
+    last_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     messages = relationship("Message", back_populates="entity")
 
     def to_dict(self) -> Dict[str, Any]:
@@ -73,7 +73,7 @@ class Message(Base):
     room_id = Column(String, ForeignKey("rooms.id"))
     entity_id = Column(String, ForeignKey("entities.id"))
     content = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     message_type = Column(SQLAEnum(MessageType))
 
     # Vehicle state data (for vehicle updates)

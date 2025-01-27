@@ -1,3 +1,4 @@
-from .simulator import Vehicle, vehicle_simulation, vehicles
+# Import main simulation components for easy access
+from .simulator import Vehicle, VehicleSimulator
 
-__all__ = ["vehicles", "Vehicle", "vehicle_simulation"]
+__all__ = ["Vehicle", "VehicleSimulator"]

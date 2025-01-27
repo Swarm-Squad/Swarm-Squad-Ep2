@@ -1,11 +1,11 @@
 from datetime import datetime, timezone
 from typing import List
 
-from database import get_db
-from models import Entity
-from schemas import EntityCreate, EntityResponse, EntityUpdate
 from sqlalchemy.orm import Session
 
+from backend.fastapi.database import get_db
+from backend.fastapi.models import Entity, Room
+from backend.fastapi.schemas import EntityCreate, EntityResponse, EntityUpdate
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/entities", tags=["entities"])
@@ -19,7 +19,7 @@ def create_entity(entity: EntityCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Entity already exists")
 
     # Check if room exists
-    db_room = db.query(Entity).filter(Entity.id == entity.room_id).first()
+    db_room = db.query(Room).filter(Room.id == entity.room_id).first()
     if not db_room:
         raise HTTPException(status_code=404, detail="Room not found")
 

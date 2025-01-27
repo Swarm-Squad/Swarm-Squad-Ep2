@@ -1,18 +1,23 @@
 from datetime import datetime, timezone
 from typing import List
 
-from backend.fastapi.database import get_db
-from backend.fastapi.models import Entity, Message, Room
-from backend.fastapi.schemas import MessageCreate, MessageResponse, MessageType
 from sqlalchemy.orm import Session
 
-from fastapi import APIRouter, Depends, HTTPException
+from backend.fastapi.database import get_db
+from backend.fastapi.models import Entity, Message, Room
+from backend.fastapi.routers.websocket import ws_manager
+from backend.fastapi.schemas import MessageCreate, MessageResponse
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
 
 @router.post("/", response_model=MessageResponse)
-def create_message(message: MessageCreate, db: Session = Depends(get_db)):
+async def create_message(
+    message: MessageCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     # Validate room exists
     room = db.query(Room).filter(Room.id == message.room_id).first()
     if not room:
@@ -32,16 +37,32 @@ def create_message(message: MessageCreate, db: Session = Depends(get_db)):
     )
 
     # If it's a vehicle update, add vehicle state
-    if message.message_type == MessageType.VEHICLE_UPDATE and hasattr(message, "state"):
-        db_message.latitude = message.state.location[0]
-        db_message.longitude = message.state.location[1]
-        db_message.speed = message.state.speed
-        db_message.battery = message.state.battery
-        db_message.status = message.state.status
+    if hasattr(message, "state"):
+        db_message.latitude = message.state.get("latitude")
+        db_message.longitude = message.state.get("longitude")
+        db_message.speed = message.state.get("speed")
+        db_message.battery = message.state.get("battery")
+        db_message.status = message.state.get("status")
 
+    # Add to database
     db.add(db_message)
     db.commit()
     db.refresh(db_message)
+
+    # Broadcast the message to WebSocket clients in the room as a background task
+    broadcast_data = {
+        "timestamp": db_message.timestamp.isoformat(),
+        "entity_id": message.entity_id,
+        "message": message.content,
+        "message_type": message.message_type,
+        "state": message.state if hasattr(message, "state") else None,
+    }
+
+    # Schedule WebSocket broadcast as a background task
+    background_tasks.add_task(
+        ws_manager.broadcast_message, broadcast_data, message.room_id
+    )
+
     return db_message
 
 

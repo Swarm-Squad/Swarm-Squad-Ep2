@@ -20,7 +20,7 @@ class EntityType(str, Enum):
     AGENT = "agent"
 
 
-class MessageType(Enum):
+class MessageType(str, Enum):
     VEHICLE_UPDATE = "vehicle_update"
     AGENT_RESPONSE = "agent_response"
     AGENT_COORDINATION = "agent_coordination"
@@ -36,6 +36,15 @@ class Room(Base):
     name = Column(String, nullable=False)
     type = Column(SQLAEnum(RoomType), nullable=False)
     messages = relationship("Message", back_populates="room")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert room to dictionary format for API responses."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "type": self.type.value,
+            "messages": [message.to_dict() for message in self.messages],
+        }
 
 
 class Entity(Base):
@@ -95,10 +104,10 @@ class Message(Base):
             "entity_id": self.entity_id,
             "content": self.content,
             "timestamp": self.timestamp.isoformat(),
-            "type": self.message_type.value,
+            "message_type": self.message_type.value,
         }
 
-        # Include vehicle state data if this is a vehicle update
+        # Add vehicle state if this is a vehicle update
         if self.message_type == MessageType.VEHICLE_UPDATE:
             base_dict["state"] = {
                 "location": [self.latitude, self.longitude],

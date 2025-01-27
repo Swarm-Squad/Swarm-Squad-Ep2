@@ -1,10 +1,10 @@
 from collections import defaultdict
 from typing import Dict, Set
 
-from database import get_db
-from models import Room
 from sqlalchemy.orm import Session
 
+from backend.fastapi.database import get_db
+from backend.fastapi.models import Room
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
 router = APIRouter(tags=["websocket"])

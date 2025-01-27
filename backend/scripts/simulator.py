@@ -1,16 +1,16 @@
 import asyncio
+import math
+import os
 import random
+import sys
 from datetime import datetime, timezone
-from decimal import Decimal
-from typing import Dict
 
-from sqlalchemy.orm import Session
+# Add the project root to Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from backend.fastapi.models import Entity, Message, MessageType
-from backend.fastapi.routers.websocket import ws_manager
-from fastapi.encoders import jsonable_encoder
-
-from .utils.message_templates import MessageTemplate
+from backend.fastapi.models import MessageType
+from backend.scripts.utils.client import SwarmClient
+from backend.scripts.utils.message_templates import MessageTemplate
 
 
 def generate_random_coordinates():
@@ -22,19 +22,69 @@ def generate_random_coordinates():
 
 
 class Vehicle:
-    """Simulates a vehicle with real-time state updates."""
+    """Simulates a vehicle with real-time state updates and neighbor detection."""
 
-    def __init__(self, vehicle_id: str):
+    def __init__(self, vehicle_id: str, simulator: "VehicleSimulator" = None):
         """Initialize vehicle with random starting values."""
         self.id = vehicle_id
+        self.simulator = simulator
         self.location = generate_random_coordinates()
         self.speed = random.uniform(0, 120)
         self.battery = random.uniform(20, 100)
         self.status = random.choice(["moving", "idle", "charging"])
-        self.room_id = vehicle_id  # Each vehicle has its own room
+
+        # Room IDs for different communication channels
+        self.v2v_room_id = vehicle_id  # Vehicle's own room for V2V communication
+        self.veh2llm_room_id = (
+            f"va{vehicle_id[1]}"  # Room for vehicle-agent communication
+        )
+        self.llm2llm_room_id = (
+            f"a{vehicle_id[1]}"  # Room for agent-to-agent communication
+        )
+
+        self.neighbor_range = (
+            50.0  # Maximum distance to consider vehicles as neighbors (in km)
+        )
+
+    def distance_to(self, other_vehicle: "Vehicle") -> float:
+        """Calculate distance to another vehicle in kilometers using Haversine formula."""
+        lat1, lon1 = map(math.radians, self.location)
+        lat2, lon2 = map(math.radians, other_vehicle.location)
+
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        )
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+        return 6371 * c  # Earth's radius in km
+
+    def get_neighbor_rooms(self) -> list[str]:
+        """Get rooms of neighboring vehicles based on distance."""
+        if not self.simulator:
+            return []
+
+        neighbor_rooms = []
+        for other_vehicle in self.simulator.vehicles.values():
+            if (
+                other_vehicle.id != self.id
+                and self.distance_to(other_vehicle) <= self.neighbor_range
+            ):
+                neighbor_rooms.append(other_vehicle.v2v_room_id)
+        return neighbor_rooms
 
     def update(self) -> None:
         """Update vehicle state with random changes."""
+        # Update location with random movement
+        lat, lon = self.location
+        self.location = (
+            lat + random.uniform(-0.01, 0.01),  # Small random movement
+            lon + random.uniform(-0.01, 0.01),
+        )
+
         self.speed = max(0, min(120, self.speed + random.uniform(-5, 5)))
         self.battery = max(0, self.battery - random.uniform(0, 0.5))
         if random.random() < 0.1:
@@ -67,9 +117,9 @@ class Vehicle:
         return {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "entity_id": self.id,
-            "room_id": self.room_id,
+            "room_id": self.v2v_room_id,
             "message": template.generate_message(),
-            "type": MessageType.VEHICLE_UPDATE.value,
+            "message_type": MessageType.VEHICLE_UPDATE.value,
             "highlight_fields": template.get_highlight_fields(),
             "state": {
                 "latitude": self.location[0],
@@ -81,49 +131,55 @@ class Vehicle:
         }
 
 
-async def broadcast_to_room(message: dict, db: Session, room_id: str) -> None:
-    """Broadcast message to specific room and store in database."""
+class VehicleSimulator:
+    """Manages multiple vehicles and their communication."""
+
+    def __init__(self, num_vehicles: int = 3):
+        """Initialize simulator with specified number of vehicles."""
+        self.client = SwarmClient()
+        self.vehicles = {}
+
+        # Create vehicles
+        for i in range(1, num_vehicles + 1):
+            self.vehicles[f"v{i}"] = Vehicle(f"v{i}", simulator=self)
+
+    async def run(self):
+        """Run the simulation."""
+        print("Starting vehicle simulation...")
+        print(f"Simulating {len(self.vehicles)} vehicles")
+        print("Press Ctrl+C to stop")
+
+        async with self.client:
+            while True:
+                for vehicle in self.vehicles.values():
+                    # Update vehicle state
+                    vehicle.update()
+                    message = vehicle.to_message()
+
+                    # Get list of rooms to broadcast to
+                    broadcast_rooms = [
+                        vehicle.v2v_room_id,  # Vehicle's own V2V room
+                        vehicle.veh2llm_room_id,  # Vehicle-to-LLM communication room
+                    ] + vehicle.get_neighbor_rooms()  # Rooms of nearby vehicles
+
+                    # Broadcast to each relevant room
+                    for room_id in set(broadcast_rooms):
+                        try:
+                            await self.client.send_message(
+                                room_id=room_id,
+                                entity_id=vehicle.id,
+                                content=message["message"],
+                                message_type=message["message_type"],
+                                state=message["state"],
+                            )
+                        except Exception as e:
+                            print(f"Error sending message to room {room_id}: {e}")
+
+                await asyncio.sleep(2)
+
+
+if __name__ == "__main__":
     try:
-        # Update entity status
-        entity = db.query(Entity).filter(Entity.id == message["entity_id"]).first()
-        if entity:
-            entity.status = "online"
-            entity.last_seen = datetime.now(timezone.utc)
-
-        # Store message in database
-        db_message = Message(
-            entity_id=message["entity_id"],
-            room_id=room_id,
-            content=message["message"],
-            timestamp=datetime.fromisoformat(message["timestamp"]),
-            message_type=MessageType.VEHICLE_UPDATE,
-            latitude=message["state"]["latitude"],
-            longitude=message["state"]["longitude"],
-            speed=message["state"]["speed"],
-            battery=message["state"]["battery"],
-            status=message["state"]["status"],
-        )
-        db.add(db_message)
-        db.commit()
-
-        # Convert message for JSON serialization and broadcast
-        json_message = jsonable_encoder(message, custom_encoder={Decimal: float})
-        await ws_manager.broadcast_message(json_message, room_id)
-    except Exception as e:
-        print(f"Error in broadcast_to_room: {e}")
-        db.rollback()
-        raise
-
-
-async def vehicle_simulation(db: Session) -> None:
-    """Main simulation loop for updating and broadcasting vehicle states."""
-    while True:
-        for vehicle in vehicles.values():
-            vehicle.update()
-            message = vehicle.to_message()
-            await broadcast_to_room(message, db, vehicle.room_id)
-        await asyncio.sleep(2)
-
-
-# Initialize global variables
-vehicles: Dict[str, Vehicle] = {}
+        asyncio.run(VehicleSimulator(num_vehicles=3).run())
+    except KeyboardInterrupt:
+        print("\nStopping simulation...")

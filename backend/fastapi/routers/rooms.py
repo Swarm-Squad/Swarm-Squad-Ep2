@@ -1,10 +1,10 @@
 from typing import List
 
-from database import get_db
-from models import Room
-from schemas import RoomCreate, RoomResponse
 from sqlalchemy.orm import Session
 
+from backend.fastapi.database import get_db
+from backend.fastapi.models import Room
+from backend.fastapi.schemas import RoomCreate, RoomResponse
 from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])

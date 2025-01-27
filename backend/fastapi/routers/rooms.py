@@ -1,10 +1,11 @@
 from typing import List
 
 from database import get_db
-from fastapi import APIRouter, Depends, HTTPException
 from models import Room
 from schemas import RoomCreate, RoomResponse
 from sqlalchemy.orm import Session
+
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/rooms", tags=["rooms"])
 

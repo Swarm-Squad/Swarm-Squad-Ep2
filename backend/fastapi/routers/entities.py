@@ -2,10 +2,11 @@ from datetime import datetime
 from typing import List
 
 from database import get_db
-from fastapi import APIRouter, Depends, HTTPException
 from models import Entity
 from schemas import EntityCreate, EntityResponse, EntityUpdate
 from sqlalchemy.orm import Session
+
+from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/entities", tags=["entities"])
 

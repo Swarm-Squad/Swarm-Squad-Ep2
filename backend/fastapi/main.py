@@ -9,13 +9,13 @@ sys.path.append(
 )
 
 import uvicorn
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from backend.fastapi.database import Base, SessionLocal, engine
 from backend.fastapi.models import Entity, EntityType, Room, RoomType
 from backend.fastapi.routers import entities, messages, rooms, websocket
 from backend.scripts.simulator import Vehicle, vehicle_simulation, vehicles
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 
 def initialize_database() -> None:

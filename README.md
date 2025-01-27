@@ -103,12 +103,13 @@
 
 ### Code Quality
 ```bash
-# Frontend
+cd frontend
 npm run lint
 npm run format
 
-# Backend
+cd backend
 ruff check
+ruff check --select I --fix
 ruff format
 ```
 

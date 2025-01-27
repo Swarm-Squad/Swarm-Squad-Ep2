@@ -4,11 +4,11 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict
 
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from backend.fastapi.models import Entity, Message, MessageType
 from backend.fastapi.routers.websocket import ws_manager
+from fastapi.encoders import jsonable_encoder
 
 from .utils.message_templates import MessageTemplate
 

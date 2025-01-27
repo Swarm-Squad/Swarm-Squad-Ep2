@@ -81,32 +81,19 @@
 
 2. **Create and activate virtual environment:**
    ```bash
-   cd backend
    uv venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
 3. **Install dependencies:**
    ```bash
-   uv pip install -r requirements.txt
+   uv pip install -r backend/requirements.txt
    ```
 
-4. **Setup Database:**
+4. **Run the server:**
    ```bash
-   # Create alembic migration directory
-   mkdir -p alembic/versions
-   
-   # Generate initial migration
-   alembic revision --autogenerate -m "Create messages table"
-   
-   # Apply migrations
-   alembic upgrade head
-   ```
-
-5. **Run the server:**
-   ```bash
-   cd backend
-   uv run app.py
+   cd backend/fastapi
+   uv run main.py
    ```
    The backend API will be available at `http://localhost:8000`
 

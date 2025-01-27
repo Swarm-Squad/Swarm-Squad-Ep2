@@ -1,20 +1,29 @@
 export const categories = [
   {
     id: "1",
-    name: "TEXT CHANNELS",
+    name: "VEHICLE CHANNELS",
     rooms: [
-      { id: "1", name: "general" },
-      { id: "2", name: "homework-help" },
-      { id: "3", name: "session-planning" },
-      { id: "4", name: "off-topic" },
+      { id: "v1", name: "vehicle-1", type: "vehicle" },
+      { id: "v2", name: "vehicle-2", type: "vehicle" },
+      { id: "v3", name: "vehicle-3", type: "vehicle" },
     ],
   },
   {
     id: "2",
-    name: "VOICE CHANNELS",
+    name: "LLM CHANNELS",
     rooms: [
-      { id: "5", name: "Study Room 1" },
-      { id: "6", name: "Study Room 2" },
+      { id: "a1", name: "agent-1", type: "agent" },
+      { id: "a2", name: "agent-2", type: "agent" },
+      { id: "a3", name: "agent-3", type: "agent" },
+    ],
+  },
+  {
+    id: "3",
+    name: "VEH2LLM CHANNELS",
+    rooms: [
+      { id: "va1", name: "veh1-agent1", type: "veh2llm" },
+      { id: "va2", name: "veh2-agent2", type: "veh2llm" },
+      { id: "va3", name: "veh3-agent3", type: "veh2llm" },
     ],
   },
 ];
@@ -23,44 +32,58 @@ export const categories = [
 export const getAllRooms = () =>
   categories.flatMap((category) => category.rooms);
 
+// Updated users to represent vehicles and agents
 export const users = [
-  { id: "1", name: "Alice", roomId: "1", status: "online" },
-  { id: "2", name: "Bob", roomId: "2", status: "online" },
-  { id: "3", name: "Charlie", roomId: "1", status: "offline" },
-  { id: "4", name: "David", roomId: "3", status: "online" },
-  { id: "5", name: "Eve", roomId: "1", status: "online" },
-  { id: "6", name: "Frank", roomId: "2", status: "offline" },
-  { id: "7", name: "Grace", roomId: "4", status: "offline" },
-  { id: "8", name: "Henry", roomId: "1", status: "online" },
-  { id: "9", name: "Ivy", roomId: "3", status: "offline" },
-  { id: "10", name: "Jack", roomId: "2", status: "online" },
-  { id: "11", name: "Kyle", roomId: "4", status: "offline" },
-  { id: "12", name: "Liam", roomId: "1", status: "online" },
-  { id: "13", name: "Mia", roomId: "3", status: "offline" },
-  { id: "14", name: "Noah", roomId: "2", status: "online" },
-  { id: "15", name: "Olivia", roomId: "4", status: "offline" },
+  {
+    id: "v1",
+    name: "Vehicle 1",
+    roomId: "v1",
+    status: "online",
+    type: "vehicle",
+  },
+  {
+    id: "v2",
+    name: "Vehicle 2",
+    roomId: "v2",
+    status: "online",
+    type: "vehicle",
+  },
+  {
+    id: "v3",
+    name: "Vehicle 3",
+    roomId: "v3",
+    status: "online",
+    type: "vehicle",
+  },
+  { id: "a1", name: "Agent 1", roomId: "a1", status: "online", type: "agent" },
+  { id: "a2", name: "Agent 2", roomId: "a2", status: "online", type: "agent" },
+  { id: "a3", name: "Agent 3", roomId: "a3", status: "online", type: "agent" },
 ];
 
+// Sample messages showing different types of communication
 export const messages = [
   {
     id: "1",
-    roomId: "1",
-    userId: "1",
-    content: "Hello everyone!",
-    timestamp: "2023-04-01T12:00:00Z",
+    roomId: "v1",
+    userId: "v1",
+    content: "Vehicle 1 status update",
+    timestamp: new Date().toISOString(),
+    type: "vehicle_update",
   },
   {
     id: "2",
-    roomId: "1",
-    userId: "2",
-    content: "Hi Alice!",
-    timestamp: "2023-04-01T12:01:00Z",
+    roomId: "a1",
+    userId: "a1",
+    content: "Agent 1 processing vehicle data",
+    timestamp: new Date().toISOString(),
+    type: "agent_response",
   },
   {
     id: "3",
-    roomId: "2",
-    userId: "3",
-    content: "Anyone need help with homework? ",
-    timestamp: "2023-04-01T12:02:00Z",
+    roomId: "ac1",
+    userId: "a1",
+    content: "Coordinating with nearby agents",
+    timestamp: new Date().toISOString(),
+    type: "agent_coordination",
   },
 ];

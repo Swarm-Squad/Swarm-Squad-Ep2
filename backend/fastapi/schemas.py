@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict
 
@@ -65,14 +65,23 @@ class EntityResponse(EntityBase):
 
 # Message Schemas
 class MessageBase(BaseModel):
-    content: str
     room_id: str
     entity_id: str
-    message_type: MessageType
+    content: str
+    message_type: str
+    state: Optional[Dict[str, Union[float, str]]] = {}
 
 
 class MessageCreate(MessageBase):
     pass
+
+
+class MessageResponse(MessageBase):
+    id: int
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class VehicleState(BaseModel):
@@ -80,14 +89,6 @@ class VehicleState(BaseModel):
     speed: float
     battery: float
     status: str
-
-
-class MessageResponse(MessageBase):
-    id: int
-    timestamp: datetime
-    state: Optional[VehicleState] = None
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 # WebSocket Schemas

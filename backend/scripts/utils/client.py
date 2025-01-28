@@ -67,9 +67,10 @@ class SwarmClient:
             "content": content,
             "message_type": message_type,
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "state": state
+            if state is not None
+            else {},  # Ensure state is always a dict
         }
-        if state:
-            message_data["state"] = state
 
         print(f"Sending message to {room_id}: {content}")
         async with self.session.post(

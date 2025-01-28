@@ -36,8 +36,8 @@ async def create_message(
         timestamp=datetime.now(timezone.utc),
     )
 
-    # If it's a vehicle update, add vehicle state
-    if hasattr(message, "state"):
+    # If state is provided, store vehicle state information
+    if hasattr(message, "state") and message.state:
         db_message.latitude = message.state.get("latitude")
         db_message.longitude = message.state.get("longitude")
         db_message.speed = message.state.get("speed")
@@ -55,7 +55,7 @@ async def create_message(
         "entity_id": message.entity_id,
         "message": message.content,
         "message_type": message.message_type,
-        "state": message.state if hasattr(message, "state") else None,
+        "state": message.state if hasattr(message, "state") else {},
     }
 
     # Schedule WebSocket broadcast as a background task

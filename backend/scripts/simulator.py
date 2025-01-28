@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from backend.fastapi.models import MessageType
+from backend.fastapi.models import Entity, EntityType, MessageType, Room, RoomType
 from backend.scripts.utils.client import SwarmClient
 from backend.scripts.utils.message_templates import MessageTemplate
 
@@ -139,9 +139,80 @@ class VehicleSimulator:
         self.client = SwarmClient()
         self.vehicles = {}
 
+        # First create all required rooms and entities
+        self._initialize_rooms_and_entities(num_vehicles)
+
         # Create vehicles
         for i in range(1, num_vehicles + 1):
             self.vehicles[f"v{i}"] = Vehicle(f"v{i}", simulator=self)
+
+    def _initialize_rooms_and_entities(self, num_vehicles: int):
+        """Initialize rooms and entities for the simulation."""
+        db = self.client.get_db()
+        try:
+            # Create rooms for each vehicle
+            rooms = []
+
+            # V2V rooms (one for each vehicle)
+            for i in range(1, num_vehicles + 1):
+                rooms.append(
+                    Room(id=f"v{i}", name=f"Vehicle {i} Room", type=RoomType.VEHICLE)
+                )
+
+            # Vehicle-to-LLM rooms (one for each vehicle)
+            for i in range(1, num_vehicles + 1):
+                rooms.append(
+                    Room(
+                        id=f"va{i}",
+                        name=f"Vehicle {i} to Agent Room",
+                        type=RoomType.VEH2LLM,
+                    )
+                )
+
+            # LLM-to-LLM rooms (one for each vehicle's agent)
+            for i in range(1, num_vehicles + 1):
+                rooms.append(
+                    Room(id=f"a{i}", name=f"Agent {i} Room", type=RoomType.AGENT)
+                )
+
+            db.add_all(rooms)
+
+            # Create entities
+            entities = []
+            # Create vehicle entities
+            for i in range(1, num_vehicles + 1):
+                entities.append(
+                    Entity(
+                        id=f"v{i}",
+                        name=f"Vehicle {i}",
+                        type=EntityType.VEHICLE,
+                        room_id=f"v{i}",  # Each vehicle is associated with its V2V room
+                        status="online",
+                    )
+                )
+
+            # Create agent entities
+            for i in range(1, num_vehicles + 1):
+                entities.append(
+                    Entity(
+                        id=f"a{i}",
+                        name=f"Agent {i}",
+                        type=EntityType.AGENT,
+                        room_id=f"a{i}",  # Each agent is associated with its LLM2LLM room
+                        status="online",
+                    )
+                )
+
+            db.add_all(entities)
+            db.commit()
+            print("Rooms and entities created successfully")
+
+        except Exception as e:
+            print(f"Error creating rooms and entities: {e}")
+            db.rollback()
+            raise
+        finally:
+            db.close()
 
     async def run(self):
         """Run the simulation."""

@@ -10,14 +10,14 @@ sys.path.append(
 import uvicorn
 
 from backend.fastapi.database import Base, SessionLocal, engine
-from backend.fastapi.models import Entity, EntityType, Room, RoomType
+from backend.fastapi.models import Entity
 from backend.fastapi.routers import entities, messages, rooms, websocket
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
 def initialize_database() -> None:
-    """Initialize the database and create initial rooms and entities."""
+    """Initialize the database by creating tables."""
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vehicle_sim.db")
 
     # Always recreate tables
@@ -26,83 +26,7 @@ def initialize_database() -> None:
 
     print("Creating database tables...")
     Base.metadata.create_all(bind=engine)
-
-    # Create initial rooms and entities
-    db = SessionLocal()
-    try:
-        num_vehicles = 3
-        # Create rooms for each vehicle
-        rooms = []
-
-        # V2V rooms (one for each vehicle)
-        for i in range(1, num_vehicles + 1):
-            rooms.append(
-                Room(id=f"v{i}", name=f"Vehicle {i} Room", type=RoomType.VEHICLE)
-            )
-
-        # Vehicle-to-LLM rooms (one for each vehicle)
-        for i in range(1, num_vehicles + 1):
-            rooms.append(
-                Room(
-                    id=f"va{i}",
-                    name=f"Vehicle {i} to Agent Room",
-                    type=RoomType.VEH2LLM,
-                )
-            )
-
-        # LLM-to-LLM rooms (one for each vehicle's agent)
-        for i in range(1, num_vehicles + 1):
-            rooms.append(Room(id=f"a{i}", name=f"Agent {i} Room", type=RoomType.AGENT))
-
-        db.add_all(rooms)
-
-        # Create entities
-        entities = []
-        # Create vehicle entities
-        for i in range(1, num_vehicles + 1):
-            entities.append(
-                Entity(
-                    id=f"v{i}",
-                    name=f"Vehicle {i}",
-                    type=EntityType.VEHICLE,
-                    room_id=f"v{i}",  # Each vehicle is associated with its V2V room
-                    status="online",
-                )
-            )
-
-        # Create agent entities
-        for i in range(1, num_vehicles + 1):
-            entities.append(
-                Entity(
-                    id=f"a{i}",
-                    name=f"Agent {i}",
-                    type=EntityType.AGENT,
-                    room_id=f"a{i}",  # Each agent is associated with its LLM2LLM room
-                    status="online",
-                )
-            )
-
-        db.add_all(entities)
-        db.commit()
-        print("Initial rooms and entities created successfully")
-
-        # Print created rooms and entities for verification
-        print("\nCreated Rooms:")
-        for room in db.query(Room).all():
-            print(f"- {room.id}: {room.name} ({room.type})")
-
-        print("\nCreated Entities:")
-        for entity in db.query(Entity).all():
-            print(
-                f"- {entity.id}: {entity.name} ({entity.type}) in room {entity.room_id}"
-            )
-
-    except Exception as e:
-        print(f"Error creating initial data: {e}")
-        db.rollback()
-        raise
-    finally:
-        db.close()
+    print("Database tables created successfully")
 
 
 @asynccontextmanager

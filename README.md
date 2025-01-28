@@ -129,10 +129,34 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre
  ┣ 📂README.assets
  ┃ ┗ 📄banner.png
  ┣ 📂backend
- ┃ ┣ 📄message_templates.py
- ┃ ┣ 📄requirements.txt
- ┃ ┣ 📄vehicle_simulator.py
- ┃ ┗ 📄websocket_server.py
+ ┃ ┣ 📂fastapi
+ ┃ ┃ ┣ 📜__init__.py
+ ┃ ┃ ┣ 📜entities.py
+ ┃ ┃ ┣ 📜messages.py
+ ┃ ┃ ┣ 📜rooms.py
+ ┃ ┃ ┗ 📜websocket.py
+ ┃ ┣ 📂static
+ ┃ ┃ ┗ 📜favicon.ico
+ ┃ ┣ 📂templates
+ ┃ ┃ ┗ 📜index.html
+ ┃ ┣ 📜__init__.py
+ ┃ ┣ 📜database.py
+ ┃ ┣ 📜main.py
+ ┃ ┣ 📜models.py
+ ┃ ┣ 📜schemas.py
+ ┃ ┣ 📜utils.py
+ ┃ ┗ 📜vehicle_sim.db
+ ┣ 📂scripts
+ ┃ ┣ 📂utils
+ ┃ ┃ ┣ 📜client.py
+ ┃ ┃ ┗ 📜message_templates.py
+ ┃ ┣ 📜__init__.py
+ ┃ ┣ 📜run_simulation.py
+ ┃ ┣ 📜simulator.py
+ ┃ ┣ 📜test_client.py
+ ┃ ┗ 📜visualize_simulation.py
+ ┣ 📜__init__.py
+ ┗ 📜requirements.txt
  ┣ 📂frontend
  ┃ ┣ 📂app
  ┃ ┣ 📂components

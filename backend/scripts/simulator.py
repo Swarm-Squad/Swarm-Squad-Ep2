@@ -1,4 +1,5 @@
 import asyncio
+import json
 import math
 import os
 import random
@@ -12,6 +13,7 @@ from backend.fastapi.main import create_simulation_resources
 from backend.fastapi.models import MessageType
 from backend.scripts.utils.client import SwarmClient
 from backend.scripts.utils.message_templates import MessageTemplate
+from backend.scripts.visualize_simulation import VehicleVisualizer
 
 
 def generate_random_coordinates():
@@ -80,13 +82,16 @@ class Vehicle:
         # Update location with random movement
         lat, lon = self.location
         self.location = (
-            lat + random.uniform(-0.01, 0.01),  # Small random movement
-            lon + random.uniform(-0.01, 0.01),
+            lat + random.uniform(-0.5, 0.5),  # Larger movement range
+            lon + random.uniform(-0.5, 0.5),
         )
 
-        self.speed = max(0, min(120, self.speed + random.uniform(-5, 5)))
-        self.battery = max(0, self.battery - random.uniform(0, 0.5))
-        if random.random() < 0.1:
+        # More noticeable speed changes
+        self.speed = max(0, min(120, self.speed + random.uniform(-10, 10)))
+        self.battery = max(
+            0, self.battery - random.uniform(0.1, 1.0)
+        )  # Faster battery drain
+        if random.random() < 0.1:  # 10% chance to change status
             self.status = random.choice(["moving", "idle", "charging"])
 
     def get_status_description(self) -> str:
@@ -133,10 +138,12 @@ class Vehicle:
 class VehicleSimulator:
     """Manages multiple vehicles and their communication."""
 
-    def __init__(self, num_vehicles: int = 3):
+    def __init__(self, num_vehicles: int = 3, enable_visualization: bool = False):
         """Initialize simulator with specified number of vehicles."""
         self.client = SwarmClient()
         self.vehicles = {}
+        self.enable_visualization = enable_visualization
+        self.visualizer = None
 
         # Initialize rooms and entities using shared function
         db = self.client.get_db()
@@ -150,43 +157,150 @@ class VehicleSimulator:
         for i in range(1, num_vehicles + 1):
             self.vehicles[f"v{i}"] = Vehicle(f"v{i}", simulator=self)
 
+        # Initialize visualizer if enabled
+        if enable_visualization:
+            self.visualizer = VehicleVisualizer(num_vehicles=num_vehicles)
+
     async def run(self):
         """Run the simulation."""
         print("Starting vehicle simulation...")
         print(f"Simulating {len(self.vehicles)} vehicles")
         print("Press Ctrl+C to stop")
 
-        async with self.client:
-            while True:
-                for vehicle in self.vehicles.values():
-                    # Update vehicle state
-                    vehicle.update()
-                    message = vehicle.to_message()
-
-                    # Get list of rooms to broadcast to
-                    broadcast_rooms = [
-                        vehicle.v2v_room_id,  # Vehicle's own V2V room
-                        vehicle.veh2llm_room_id,  # Vehicle-to-LLM communication room
-                    ] + vehicle.get_neighbor_rooms()  # Rooms of nearby vehicles
-
-                    # Broadcast to each relevant room
-                    for room_id in set(broadcast_rooms):
+        while True:  # Outer loop for reconnection
+            try:
+                async with self.client:
+                    while True:  # Inner loop for simulation
                         try:
-                            await self.client.send_message(
-                                room_id=room_id,
-                                entity_id=vehicle.id,
-                                content=message["message"],
-                                message_type=message["message_type"],
-                                state=message["state"],
-                            )
-                        except Exception as e:
-                            print(f"Error sending message to room {room_id}: {e}")
+                            for vehicle in self.vehicles.values():
+                                try:
+                                    # Update vehicle state
+                                    vehicle.update()
+                                    message = vehicle.to_message()
 
-                await asyncio.sleep(2)
+                                    # Get list of rooms to broadcast to
+                                    broadcast_rooms = (
+                                        [
+                                            vehicle.v2v_room_id,  # Vehicle's own V2V room
+                                            vehicle.veh2llm_room_id,  # Vehicle-to-LLM communication room
+                                        ]
+                                        + vehicle.get_neighbor_rooms()
+                                    )  # Rooms of nearby vehicles
+
+                                    # Broadcast to each relevant room
+                                    for room_id in set(broadcast_rooms):
+                                        await self.client.send_message(
+                                            room_id=room_id,
+                                            entity_id=vehicle.id,
+                                            content=message["message"],
+                                            message_type=message["message_type"],
+                                            state=message["state"],
+                                        )
+                                        print(f"\n[{room_id}] {message['message']}")
+                                        print(
+                                            "State:",
+                                            json.dumps(message["state"], indent=2),
+                                        )
+                                except Exception as e:
+                                    print(f"Error updating vehicle {vehicle.id}: {e}")
+                                    continue
+
+                            # Wait before next update
+                            await asyncio.sleep(1)
+
+                        except asyncio.CancelledError:
+                            raise
+                        except Exception as e:
+                            if "Cannot connect to host" in str(e):
+                                print(f"Connection lost: {e}")
+                                raise  # Re-raise to trigger reconnection
+                            else:
+                                print(f"Error in simulation loop: {e}")
+                                await asyncio.sleep(1)  # Brief pause before continuing
+
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                print(f"Connection error: {e}")
+                print("Attempting to reconnect in 5 seconds...")
+                await asyncio.sleep(5)  # Wait before reconnecting
+                continue  # Retry the connection
+
+    async def run_with_visualization(self):
+        """Run both simulation and visualization concurrently."""
+        if not self.enable_visualization:
+            await self.run()
+            return
+
+        try:
+            # Start visualization first
+            vis_task = asyncio.create_task(self.visualizer.run())
+
+            # Run simulation loop while visualization is active
+            while not vis_task.done():
+                try:
+                    async with self.client:
+                        while not vis_task.done():
+                            for vehicle in self.vehicles.values():
+                                try:
+                                    # Update vehicle state
+                                    vehicle.update()
+                                    message = vehicle.to_message()
+
+                                    # Get list of rooms to broadcast to
+                                    broadcast_rooms = (
+                                        [
+                                            vehicle.v2v_room_id,  # Vehicle's own V2V room
+                                            vehicle.veh2llm_room_id,  # Vehicle-to-LLM communication room
+                                        ]
+                                        + vehicle.get_neighbor_rooms()
+                                    )  # Rooms of nearby vehicles
+
+                                    # Broadcast to each relevant room
+                                    for room_id in set(broadcast_rooms):
+                                        await self.client.send_message(
+                                            room_id=room_id,
+                                            entity_id=vehicle.id,
+                                            content=message["message"],
+                                            message_type=message["message_type"],
+                                            state=message["state"],
+                                        )
+                                        print(f"\n[{room_id}] {message['message']}")
+                                        print(
+                                            "State:",
+                                            json.dumps(message["state"], indent=2),
+                                        )
+
+                                except Exception as e:
+                                    print(f"Error updating vehicle {vehicle.id}: {e}")
+                                    continue
+
+                            # Wait before next update
+                            await asyncio.sleep(1)  # Update every second
+
+                except Exception as e:
+                    print(f"Connection error: {e}")
+                    print("Attempting to reconnect in 5 seconds...")
+                    await asyncio.sleep(5)
+                    continue  # Retry the connection
+
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            print(f"Error in run_with_visualization: {e}")
+        finally:
+            # Ensure visualization task is cleaned up
+            if not vis_task.done():
+                vis_task.cancel()
+                try:
+                    await vis_task
+                except asyncio.CancelledError:
+                    pass
+            print("\nVisualization window closed. Stopping simulation...")
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(VehicleSimulator(num_vehicles=3).run())
+        asyncio.run(VehicleSimulator(num_vehicles=3).run_with_visualization())
     except KeyboardInterrupt:
         print("\nStopping simulation...")

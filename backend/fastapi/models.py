@@ -104,22 +104,32 @@ class Message(Base):
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert message to dictionary format for API responses."""
-        base_dict = {
+        # Always include state data if it exists
+        state = {}
+        if any(
+            v is not None
+            for v in [
+                self.latitude,
+                self.longitude,
+                self.speed,
+                self.battery,
+                self.status,
+            ]
+        ):
+            state = {
+                "latitude": self.latitude,
+                "longitude": self.longitude,
+                "speed": self.speed,
+                "battery": self.battery,
+                "status": self.status,
+            }
+
+        return {
             "id": self.id,
             "room_id": self.room_id,
             "entity_id": self.entity_id,
             "content": self.content,
             "timestamp": self.timestamp.isoformat(),
             "message_type": self.message_type.value,
+            "state": state,
         }
-
-        # Add vehicle state if this is a vehicle update
-        if self.message_type == MessageType.VEHICLE_UPDATE:
-            base_dict["state"] = {
-                "location": [self.latitude, self.longitude],
-                "speed": self.speed,
-                "battery": self.battery,
-                "status": self.status,
-            }
-
-        return base_dict

@@ -11,9 +11,9 @@ from backend.scripts.simulator import VehicleSimulator
 
 
 async def main():
-    """Run the vehicle simulation."""
-    simulator = VehicleSimulator(num_vehicles=3)
-    await simulator.run()
+    """Run the vehicle simulation with visualization."""
+    simulator = VehicleSimulator(num_vehicles=3, enable_visualization=True)
+    await simulator.run_with_visualization()
 
 
 if __name__ == "__main__":

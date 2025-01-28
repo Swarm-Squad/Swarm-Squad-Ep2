@@ -23,7 +23,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 class SwarmClient:
-    """Base client for connecting to the Swarm Squad server."""
+    """Base client for connecting to the Swarm Squad Dialouge server."""
 
     def __init__(self, base_url: str = "http://localhost:8000"):
         """Initialize the client with server URL."""

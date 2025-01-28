@@ -6,19 +6,19 @@ from pydantic import BaseModel, ConfigDict
 
 
 class RoomType(str, Enum):
-    VEHICLE = "vehicle"
-    AGENT = "agent"
-    VEH2LLM = "veh2llm"
+    VEHICLE = "vehicle"  # For vehicle-to-vehicle communication
+    VL = "vl"  # For vehicle-to-LLM communication
+    LLM = "llm"  # For LLM-to-LLM communication
 
 
 class EntityType(str, Enum):
-    VEHICLE = "vehicle"
-    AGENT = "agent"
+    VEHICLE = "vehicle"  # For vehicles
+    LLM = "llm"  # For LLM agents
 
 
 class MessageType(str, Enum):
     VEHICLE_UPDATE = "vehicle_update"
-    AGENT_RESPONSE = "agent_response"
+    LLM_RESPONSE = "llm_response"
     AGENT_COORDINATION = "agent_coordination"
 
 

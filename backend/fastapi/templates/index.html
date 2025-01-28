@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Swarm Squad: The Digital Dialogue</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .columns {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .column {
+            flex: 1;
+            min-width: 0;
+            /* Prevents flex items from overflowing */
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #666;
+            margin-top: 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .list-container {
+            max-height: 600px;
+            /* Increased height for better visibility */
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        .list-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .item-details {
+            flex-grow: 1;
+        }
+
+        .item-details h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+
+        .item-details p {
+            margin: 2px 0;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .status.online {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status.offline {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .message {
+            border-left: 3px solid #007bff;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        .counter {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .type-tag {
+            display: inline-block;
+            background-color: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-right: 5px;
+            font-size: 0.8em;
+            color: #495057;
+        }
+
+        /* Link styles */
+        .item-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .item-link:hover {
+            color: #007bff;
+        }
+
+        .room-link {
+            text-decoration: none;
+            color: #007bff;
+        }
+
+        .room-link:hover {
+            text-decoration: underline;
+        }
+
+        .entity-link {
+            text-decoration: none;
+            color: #28a745;
+        }
+
+        .entity-link:hover {
+            text-decoration: underline;
+        }
+
+        .message-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .message-link:hover {
+            color: #007bff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Swarm Squad: The Digital Dialogue</h1>
+
+        <div class="columns">
+            <!-- Left Column: Rooms -->
+            <div class="column">
+                <div class="section">
+                    <h2>Rooms</h2>
+                    <div class="counter">Total Rooms: {{ rooms|length }}</div>
+                    <div class="list-container">
+                        {% for room in rooms %}
+                        <div class="list-item">
+                            <div class="item-details">
+                                <h3><a href="/rooms/{{ room.id }}" class="item-link">{{ room.name }}</a></h3>
+                                <p>ID: <a href="/rooms/{{ room.id }}" class="room-link">{{ room.id }}</a></p>
+                                <p>
+                                    Type: Room
+                                    {% if room.type.value == 'vehicle' %}
+                                    <span class="type-tag">Vehicle</span>
+                                    {% elif room.type.value == 'vl' %}
+                                    <span class="type-tag">VL</span>
+                                    {% elif room.type.value == 'llm' %}
+                                    <span class="type-tag">LLM</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Entities -->
+            <div class="column">
+                <div class="section">
+                    <h2>Entities</h2>
+                    <div class="counter">Total Entities: {{ entities|length }}</div>
+                    <div class="list-container">
+                        {% for entity in entities %}
+                        <div class="list-item">
+                            <div class="item-details">
+                                <h3><a href="/entities/{{ entity.id }}" class="item-link">{{ entity.name }}</a></h3>
+                                <p>ID: <a href="/entities/{{ entity.id }}" class="entity-link">{{ entity.id }}</a></p>
+                                <p>
+                                    Type: Entity
+                                    {% if entity.type.value == 'vehicle' %}
+                                    <span class="type-tag">Vehicle</span>
+                                    {% elif entity.type.value == 'llm' %}
+                                    <span class="type-tag">LLM</span>
+                                    {% endif %}
+                                </p>
+                                <p>Room: <a href="/rooms/{{ entity.room_id }}" class="room-link">{{ entity.room_id
+                                        }}</a></p>
+                            </div>
+                            <span class="status {{ entity.status }}">{{ entity.status }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Full Width: Messages -->
+        <div class="section">
+            <h2>Recent Messages</h2>
+            <div class="counter">Showing last {{ messages|length }} messages</div>
+            <div class="list-container">
+                {% for message in messages %}
+                <div class="message">
+                    <div class="timestamp">{{ message.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                    <p>
+                        <a href="/entities/{{ message.entity_id }}" class="entity-link"><strong>{{ message.entity_id
+                                }}</strong></a>
+                        in room
+                        <a href="/rooms/{{ message.room_id }}" class="room-link"><strong>{{ message.room_id
+                                }}</strong></a>:
+                    </p>
+                    <a href="/messages/{{ message.id }}" class="message-link">
+                        <p>{{ message.content }}</p>
+                        {% if message.state %}
+                        <p class="message-state">
+                            State: {{ message.state | tojson }}
+                        </p>
+                        {% endif %}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

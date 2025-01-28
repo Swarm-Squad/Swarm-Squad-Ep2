@@ -10,62 +10,68 @@ from backend.fastapi.database import Base
 
 
 class RoomType(str, Enum):
-    VEHICLE = "vehicle"
-    AGENT = "agent"
-    VEH2LLM = "veh2llm"
+    VEHICLE = "vehicle"  # For vehicle-to-vehicle communication
+    VL = "vl"  # For vehicle-to-LLM communication
+    LLM = "llm"  # For LLM-to-LLM communication
 
 
 class EntityType(str, Enum):
-    VEHICLE = "vehicle"
-    AGENT = "agent"
+    VEHICLE = "vehicle"  # For vehicles
+    LLM = "llm"  # For LLM agents
 
 
 class MessageType(str, Enum):
     VEHICLE_UPDATE = "vehicle_update"
-    AGENT_RESPONSE = "agent_response"
+    LLM_RESPONSE = "llm_response"
     AGENT_COORDINATION = "agent_coordination"
 
 
 class Room(Base):
-    """Database model for rooms."""
+    """Room model for group communication."""
 
     __tablename__ = "rooms"
     __table_args__ = {"extend_existing": True}
 
     id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    type = Column(SQLAEnum(RoomType), nullable=False)
+    name = Column(String)
+    type = Column(String)
+
+    # Relationships
     messages = relationship("Message", back_populates="room")
+    entities = relationship("Entity", back_populates="room")
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert room to dictionary format for API responses."""
         return {
             "id": self.id,
             "name": self.name,
-            "type": self.type.value,
+            "type": self.type,
             "messages": [message.to_dict() for message in self.messages],
         }
 
 
 class Entity(Base):
-    """Database model for vehicles and agents."""
+    """Entity model for vehicles and agents."""
 
     __tablename__ = "entities"
     __table_args__ = {"extend_existing": True}
 
     id = Column(String, primary_key=True)
-    name = Column(String, nullable=False)
-    type = Column(SQLAEnum(EntityType), nullable=False)
+    name = Column(String)
+    type = Column(String)
     room_id = Column(String, ForeignKey("rooms.id"))
-    status = Column(String, default="offline")  # online/offline
+    status = Column(String, default="offline")
     last_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    room = relationship("Room", back_populates="entities")
     messages = relationship("Message", back_populates="entity")
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
             "name": self.name,
-            "type": self.type.value,
+            "type": self.type,
             "room_id": self.room_id,
             "status": self.status,
             "last_seen": self.last_seen.isoformat(),
@@ -73,19 +79,19 @@ class Entity(Base):
 
 
 class Message(Base):
-    """Database model for all types of messages."""
+    """Message model for communication."""
 
     __tablename__ = "messages"
     __table_args__ = {"extend_existing": True}
 
-    id = Column(Integer, primary_key=True)  # Primary key is automatically indexed
+    id = Column(Integer, primary_key=True)
     room_id = Column(String, ForeignKey("rooms.id"))
     entity_id = Column(String, ForeignKey("entities.id"))
     content = Column(Text)
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     message_type = Column(SQLAEnum(MessageType))
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    # Vehicle state data (for vehicle updates)
+    # Vehicle state fields
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     speed = Column(Float, nullable=True)

@@ -1,36 +1,35 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # Backend Python
-backend/.idea/
-backend/__pycache__/
-backend/**/__pycache__/
-backend/.asv
-backend/.ruff_cache
-backend/.venv/
-backend/*.db
+**/.idea/
+**/__pycache__/
+**/.asv
+**/.ruff_cache
+**/.venv/
+**/*.db
 
 # Frontend dependencies
-frontend/node_modules/
-frontend/dist/
-frontend/package-lock.json
+**/node_modules/
+**/dist/
+**/package-lock.json
 
 # Frontend Next.js
-frontend/.next/
-frontend/out/
-frontend/build/
+**/.next/
+**/out/
+**/build/
 
 # Frontend debug
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
-frontend/.pnpm-debug.log*
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
 
 # Environment files
 **/.env*
 
 # Vercel
-frontend/.vercel
+**/vercel
 
 # TypeScript
-frontend/*.tsbuildinfo
-frontend/next-env.d.ts
+**/tsbuildinfo
+**/next-env.d.ts

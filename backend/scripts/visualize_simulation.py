@@ -28,6 +28,7 @@ class VehicleVisualizer:
         self.connected = False
         self.last_update = {}
         self.ws_tasks = []
+        self.anim = None
 
         # Store vehicle positions and data
         self.vehicles = {}
@@ -292,7 +293,7 @@ class VehicleVisualizer:
                 print("⚠️ No data received yet. Waiting for simulation updates...")
 
             # Create animation after connections are established
-            FuncAnimation(
+            self.anim = FuncAnimation(
                 self.fig,
                 self.update_plot,
                 interval=500,

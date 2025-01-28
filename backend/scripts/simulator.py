@@ -13,7 +13,6 @@ from backend.fastapi.main import create_simulation_resources
 from backend.fastapi.models import MessageType
 from backend.scripts.utils.client import SwarmClient
 from backend.scripts.utils.message_templates import MessageTemplate
-from backend.scripts.visualize_simulation import VehicleVisualizer
 
 
 def generate_random_coordinates():
@@ -82,8 +81,8 @@ class Vehicle:
         # Update location with random movement
         lat, lon = self.location
         self.location = (
-            lat + random.uniform(-0.5, 0.5),  # Larger movement range
-            lon + random.uniform(-0.5, 0.5),
+            lat + random.uniform(-2.0, 2.0),  # Increased movement range (4x faster)
+            lon + random.uniform(-2.0, 2.0),  # Increased movement range (4x faster)
         )
 
         # More noticeable speed changes
@@ -138,12 +137,10 @@ class Vehicle:
 class VehicleSimulator:
     """Manages multiple vehicles and their communication."""
 
-    def __init__(self, num_vehicles: int = 3, enable_visualization: bool = False):
+    def __init__(self, num_vehicles: int = 3):
         """Initialize simulator with specified number of vehicles."""
         self.client = SwarmClient()
         self.vehicles = {}
-        self.enable_visualization = enable_visualization
-        self.visualizer = None
 
         # Initialize rooms and entities using shared function
         db = self.client.get_db()
@@ -156,10 +153,6 @@ class VehicleSimulator:
         # Create vehicles
         for i in range(1, num_vehicles + 1):
             self.vehicles[f"v{i}"] = Vehicle(f"v{i}", simulator=self)
-
-        # Initialize visualizer if enabled
-        if enable_visualization:
-            self.visualizer = VehicleVisualizer(num_vehicles=num_vehicles)
 
     async def run(self):
         """Run the simulation."""
@@ -226,37 +219,9 @@ class VehicleSimulator:
                 await asyncio.sleep(5)  # Wait before reconnecting
                 continue  # Retry the connection
 
-    async def run_with_visualization(self):
-        """Run both simulation and visualization concurrently."""
-        if not self.enable_visualization:
-            await self.run()
-            return
-
-        try:
-            # Create tasks for both visualization and simulation
-            vis_task = asyncio.create_task(self.visualizer.run())
-            sim_task = asyncio.create_task(self.run())
-
-            # Run both tasks concurrently
-            await asyncio.gather(vis_task, sim_task)
-        except asyncio.CancelledError:
-            raise
-        except Exception as e:
-            print(f"Error in run_with_visualization: {e}")
-        finally:
-            # Ensure tasks are cleaned up
-            for task in [vis_task, sim_task]:
-                if not task.done():
-                    task.cancel()
-                    try:
-                        await task
-                    except asyncio.CancelledError:
-                        pass
-            print("\nVisualization window closed. Stopping simulation...")
-
 
 if __name__ == "__main__":
     try:
-        asyncio.run(VehicleSimulator(num_vehicles=3).run_with_visualization())
+        asyncio.run(VehicleSimulator(num_vehicles=3).run())
     except KeyboardInterrupt:
         print("\nStopping simulation...")

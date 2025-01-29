@@ -50,7 +50,7 @@ def create_simulation_resources(
                 rooms.append(
                     Room(
                         id=f"vl{i}",
-                        name=f"Vehicle {i} to Agent Room",
+                        name=f"Vehicle {i} to LLM Room",
                         type=RoomType.VL,
                     )
                 )
@@ -58,7 +58,7 @@ def create_simulation_resources(
                 rooms.append(
                     Room(
                         id=f"l{i}",
-                        name=f"Agent {i} Room",
+                        name=f"LLM {i} Room",
                         type=RoomType.LLM,
                     )
                 )
@@ -79,7 +79,7 @@ def create_simulation_resources(
                 entities.append(
                     Entity(
                         id=f"l{i}",
-                        name=f"Agent {i}",
+                        name=f"LLM {i}",
                         type=EntityType.LLM,
                         room_id=f"l{i}",
                         status="online",

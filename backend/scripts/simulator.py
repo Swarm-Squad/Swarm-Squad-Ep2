@@ -78,19 +78,21 @@ class Vehicle:
 
     def update(self) -> None:
         """Update vehicle state with random changes."""
-        # Update location with random movement
+        # Update location with smoother, smaller movements
         lat, lon = self.location
         self.location = (
-            lat + random.uniform(-2.0, 2.0),  # Increased movement range (4x faster)
-            lon + random.uniform(-2.0, 2.0),  # Increased movement range (4x faster)
+            lat + random.uniform(-1.0, 1.0),  # Smaller, smoother movements
+            lon + random.uniform(-1.0, 1.0),  # Smaller, smoother movements
         )
 
-        # More noticeable speed changes
-        self.speed = max(0, min(120, self.speed + random.uniform(-10, 10)))
+        # Smoother speed changes
+        self.speed = max(
+            0, min(120, self.speed + random.uniform(-5, 5))
+        )  # Smaller speed changes
         self.battery = max(
-            0, self.battery - random.uniform(0.1, 1.0)
-        )  # Faster battery drain
-        if random.random() < 0.1:  # 10% chance to change status
+            0, self.battery - random.uniform(0.05, 0.5)
+        )  # Slower battery drain
+        if random.random() < 0.05:  # 5% chance to change status (less frequent changes)
             self.status = random.choice(["moving", "idle", "charging"])
 
     def get_status_description(self) -> str:
@@ -199,7 +201,7 @@ class VehicleSimulator:
                                     continue
 
                             # Wait before next update
-                            await asyncio.sleep(1)
+                            await asyncio.sleep(0.25)  # Update 4x more frequently
 
                         except asyncio.CancelledError:
                             raise

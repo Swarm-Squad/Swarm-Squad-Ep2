@@ -1,135 +1,70 @@
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Dict
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy import Enum as SQLAEnum
-from sqlalchemy.orm import relationship
-
-from backend.fastapi.database import Base
+from pydantic import BaseModel, Field
 
 
-class RoomType(str, Enum):
-    VEHICLE = "vehicle"  # For vehicle-to-vehicle communication
-    VL = "vl"  # For vehicle-to-LLM communication
-    LLM = "llm"  # For LLM-to-LLM communication
+class Position(BaseModel):
+    coordinates: Tuple[float, float, float]  # (latitude, longitude, altitude)
+    radius: float = 100.0  # radius in meters to determine nearby entities
 
 
-class EntityType(str, Enum):
-    VEHICLE = "vehicle"  # For vehicles
-    LLM = "llm"  # For LLM agents
+class VehicleState(BaseModel):
+    """Comprehensive vehicle state data"""
+
+    position: Position
+    velocity: Tuple[float, float, float] = (0.0, 0.0, 0.0)  # (vx, vy, vz) in m/s
+    acceleration: Tuple[float, float, float] = (0.0, 0.0, 0.0)  # (ax, ay, az) in m/s²
+    battery_status: float = Field(ge=0, le=100)  # battery percentage
+    communication_quality: float = Field(ge=0, le=100)  # signal strength percentage
+    status: str = "idle"  # vehicle operational status
+    timestamp: float = Field(default_factory=lambda: datetime.utcnow().timestamp())
+    custom_data: Dict[str, Any] = {}  # for any additional sensor/state data
 
 
-class MessageType(str, Enum):
-    VEHICLE_UPDATE = "vehicle_update"
-    LLM_RESPONSE = "llm_response"
-    AGENT_COORDINATION = "agent_coordination"
+class VehicleMessage(BaseModel):
+    message: str
+    timestamp: Optional[float] = None
+    nearby_vehicles: List[str] = []
+    state: Optional[VehicleState] = None  # Include vehicle state with messages
 
 
-class Room(Base):
-    """Room model for group communication."""
-
-    __tablename__ = "rooms"
-    __table_args__ = {"extend_existing": True}
-
-    id = Column(String, primary_key=True)
-    name = Column(String)
-    type = Column(String)
-
-    # Relationships
-    messages = relationship("Message", back_populates="room")
-    entities = relationship("Entity", back_populates="room")
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert room to dictionary format for API responses."""
-        return {
-            "id": self.id,
-            "name": self.name,
-            "type": self.type,
-            "messages": [message.to_dict() for message in self.messages],
-        }
+class LLMMessage(BaseModel):
+    message: str
+    timestamp: Optional[float] = None
+    nearby_llms: List[str] = []
 
 
-class Entity(Base):
-    """Entity model for vehicles and agents."""
-
-    __tablename__ = "entities"
-    __table_args__ = {"extend_existing": True}
-
-    id = Column(String, primary_key=True)
-    name = Column(String)
-    type = Column(String)
-    room_id = Column(String, ForeignKey("rooms.id"))
-    status = Column(String, default="offline")
-    last_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-
-    # Relationships
-    room = relationship("Room", back_populates="entities")
-    messages = relationship("Message", back_populates="entity")
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "type": self.type,
-            "room_id": self.room_id,
-            "status": self.status,
-            "last_seen": self.last_seen.isoformat(),
-        }
+class VehicleAgent(BaseModel):
+    _id: str
+    state: Optional[VehicleState] = None  # Current vehicle state
+    llm_id: Optional[str] = None
+    messages: List[VehicleMessage] = []
 
 
-class Message(Base):
-    """Message model for communication."""
+class LLMAgent(BaseModel):
+    _id: str
+    vehicle_id: Optional[str] = None
+    messages: List[LLMMessage] = []
 
-    __tablename__ = "messages"
-    __table_args__ = {"extend_existing": True}
 
-    id = Column(Integer, primary_key=True)
-    room_id = Column(String, ForeignKey("rooms.id"))
-    entity_id = Column(String, ForeignKey("entities.id"))
-    content = Column(Text)
-    message_type = Column(SQLAEnum(MessageType))
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+class VehicleLLMMapping(BaseModel):
+    vehicle_id: str
+    llm_id: str
 
-    # Vehicle state fields
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
-    speed = Column(Float, nullable=True)
-    battery = Column(Float, nullable=True)
-    status = Column(String, nullable=True)
 
-    # Relationships
-    room = relationship("Room", back_populates="messages")
-    entity = relationship("Entity", back_populates="messages")
+# Response Models for Batch Operations
+class NearbyVehicle(BaseModel):
+    vehicle_id: str
+    distance: float
+    state: Optional[VehicleState] = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert message to dictionary format for API responses."""
-        # Always include state data if it exists
-        state = {}
-        if any(
-            v is not None
-            for v in [
-                self.latitude,
-                self.longitude,
-                self.speed,
-                self.battery,
-                self.status,
-            ]
-        ):
-            state = {
-                "latitude": self.latitude,
-                "longitude": self.longitude,
-                "speed": self.speed,
-                "battery": self.battery,
-                "status": self.status,
-            }
 
-        return {
-            "id": self.id,
-            "room_id": self.room_id,
-            "entity_id": self.entity_id,
-            "content": self.content,
-            "timestamp": self.timestamp.isoformat(),
-            "message_type": self.message_type.value,
-            "state": state,
-        }
+class BatchStateResponse(BaseModel):
+    states: Dict[str, VehicleState]
+    timestamp: float = Field(default_factory=lambda: datetime.utcnow().timestamp())
+
+
+class BatchMessageResponse(BaseModel):
+    messages: Dict[str, List[VehicleMessage]]
+    timestamp: float = Field(default_factory=lambda: datetime.utcnow().timestamp())

@@ -133,32 +133,15 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre
  ┃ ┗ 📄banner.png
  ┣ 📂backend
  ┃ ┣ 📂fastapi
- ┃ ┃ ┣ 📄__init__.py
- ┃ ┃ ┣ 📄entities.py
- ┃ ┃ ┣ 📄messages.py
- ┃ ┃ ┣ 📄rooms.py
- ┃ ┃ ┗ 📄websocket.py
- ┃ ┣ 📂static
- ┃ ┃ ┗ 📄favicon.ico
- ┃ ┣ 📂templates
- ┃ ┃ ┗ 📄index.html
- ┃ ┣ 📄__init__.py
- ┃ ┣ 📄database.py
- ┃ ┣ 📄main.py
- ┃ ┣ 📄models.py
- ┃ ┣ 📄schemas.py
- ┃ ┣ 📄utils.py
- ┃ ┗ 📄vehicle_sim.db
- ┣ 📂scripts
- ┃ ┣ 📂utils
- ┃ ┃ ┣ 📄client.py
- ┃ ┃ ┗ 📄message_templates.py
- ┃ ┣ 📄__init__.py
- ┃ ┣ 📄run_simulation.py
- ┃ ┣ 📄simulator.py
- ┃ ┣ 📄test_client.py
- ┃ ┗ 📄visualize_simulation.py
- ┣ 📄__init__.py
+ ┃ ┃ ┣ 📂routers
+ ┃ ┣ ┣ 📂static
+ ┃ ┣ ┣ 📂templates
+ ┃ ┣ ┗ 📄main.py
+ ┃ ┣ 📂scripts
+ ┃ ┃ ┣ 📂utils
+ ┃ ┃ ┣ 📄run_simulation.py
+ ┃ ┃ ┣ 📄test_client.py
+ ┃ ┃ ┗ 📄visualize_simulation.py
  ┗ 📄requirements.txt
  ┣ 📂frontend
  ┃ ┣ 📂app

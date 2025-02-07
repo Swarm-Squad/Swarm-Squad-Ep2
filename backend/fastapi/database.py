@@ -1,42 +1,45 @@
-import os
-from typing import Generator
+from typing import Optional
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Session, sessionmaker
+from motor.motor_asyncio import AsyncIOMotorClient
 
-# Get the current directory for database file path
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# MongoDB connection URL
+MONGODB_URL = "mongodb://localhost:27017"
+DB_NAME = "swarm_squad"
 
-# Database configuration
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(current_dir, 'vehicle_sim.db')}"
+# MongoDB client
+client: Optional[AsyncIOMotorClient] = None
 
-# Create engine with SQLite-specific settings
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},  # Required for SQLite
-)
-
-# Create session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# Create base class for declarative models with a specific registry
-Base = declarative_base()
+# Collections
+db = None
+vehicles_collection = None
+llms_collection = None
+veh2llm_collection = None
 
 
-def get_db() -> Generator[Session, None, None]:
-    """Dependency function to get database session.
+async def connect_to_mongo():
+    """Connect to MongoDB"""
+    global client, db, vehicles_collection, llms_collection, veh2llm_collection
+    if client is None:
+        client = AsyncIOMotorClient(MONGODB_URL)
+        db = client[DB_NAME]
+        vehicles_collection = db.vehicles
+        llms_collection = db.llms
+        veh2llm_collection = db.veh2llm
 
-    Yields:
-        Session: SQLAlchemy database session
 
-    Usage:
-        @app.get("/endpoint")
-        def endpoint(db: Session = Depends(get_db)):
-            ...
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def close_mongo_connection():
+    """Close MongoDB connection"""
+    global client
+    if client is not None:
+        client.close()
+        client = None
+
+
+def get_database():
+    """Get database instance"""
+    return db
+
+
+def get_collection(name: str):
+    """Get collection by name"""
+    return db[name]

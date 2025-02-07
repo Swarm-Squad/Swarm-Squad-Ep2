@@ -1,269 +1,241 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swarm Squad: The Digital Dialogue</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2rem;
             background-color: #f5f5f5;
         }
-
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .section {
             background-color: white;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .columns {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .column {
-            flex: 1;
-            min-width: 0;
-            /* Prevents flex items from overflowing */
-        }
-
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h2 {
-            color: #666;
-            margin-top: 0;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .list-container {
-            max-height: 600px;
-            /* Increased height for better visibility */
-            overflow-y: auto;
-            border: 1px solid #eee;
-            border-radius: 4px;
-        }
-
-        .list-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .list-item:last-child {
-            border-bottom: none;
-        }
-
-        .list-item:hover {
-            background-color: #f8f9fa;
-        }
-
-        .item-details {
-            flex-grow: 1;
-        }
-
-        .item-details h3 {
-            margin: 0 0 5px 0;
-            color: #333;
-        }
-
-        .item-details p {
-            margin: 2px 0;
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .status {
-            display: inline-block;
-            padding: 3px 8px;
+            padding: 3rem;
             border-radius: 12px;
-            font-size: 0.8em;
-            margin-left: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        .status.online {
-            background-color: #d4edda;
-            color: #155724;
+        h1, h2 {
+            color: #1f2937;
+            text-align: center;
+            margin-bottom: 1.5rem;
         }
-
-        .status.offline {
-            background-color: #f8d7da;
-            color: #721c24;
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
         }
-
-        .message {
-            border-left: 3px solid #007bff;
-            padding: 10px;
-            margin: 5px 0;
-            background-color: #f8f9fa;
-        }
-
-        .timestamp {
-            color: #666;
-            font-size: 0.8em;
-        }
-
-        .counter {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 10px;
-        }
-
-        .type-tag {
+        .api-link {
             display: inline-block;
-            background-color: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin-right: 5px;
-            font-size: 0.8em;
-            color: #495057;
-        }
-
-        /* Link styles */
-        .item-link {
+            background-color: #000000;
+            color: white;
+            padding: 0.75rem 1.5rem;
             text-decoration: none;
-            color: inherit;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-align: center;
         }
-
-        .item-link:hover {
-            color: #007bff;
+        .api-link:hover {
+            background-color: #fff;
+            color: #000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
-
-        .room-link {
-            text-decoration: none;
-            color: #007bff;
+        .welcome-text {
+            text-align: center;
+            max-width: 1000px;
+            margin: 0 auto 2rem;
+            color: #374151;
+            font-size: 1.1rem;
         }
-
-        .room-link:hover {
-            text-decoration: underline;
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 columns */
+            gap: 2rem;
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }        
+        .feature-card {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: transform 0.2s ease;
         }
-
-        .entity-link {
-            text-decoration: none;
-            color: #28a745;
+        .feature-card:hover {
+            transform: translateY(-5px);
         }
-
-        .entity-link:hover {
-            text-decoration: underline;
+        .feature-emoji {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
         }
-
-        .message-link {
-            text-decoration: none;
-            color: inherit;
+        .feature-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
         }
-
-        .message-link:hover {
-            color: #007bff;
+        .feature-description {
+            color: #6b7280;
+            font-size: 0.95rem;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .data-table th, .data-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .data-table th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+        }
+        .data-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        .section-title {
+            color: #1f2937;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 2rem 0 1rem;
+            text-align: center;
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <h1>Swarm Squad: The Digital Dialogue</h1>
+        <p class="welcome-text">Welcome to the Swarm Squad API platform.<br>This system manages communication and coordination between Vehicles and LLM agents in a swarm environment.</p>
+        <div class="button-container">
+            <a href="/docs" class="api-link">OpenAPI Documentation</a>
+        </div>
 
-        <div class="columns">
-            <!-- Left Column: Rooms -->
-            <div class="column">
-                <div class="section">
-                    <h2>Rooms</h2>
-                    <div class="counter">Total Rooms: {{ rooms|length }}</div>
-                    <div class="list-container">
-                        {% for room in rooms %}
-                        <div class="list-item">
-                            <div class="item-details">
-                                <h3><a href="/rooms/{{ room.id }}" class="item-link">{{ room.name }}</a></h3>
-                                <p>ID: <a href="/rooms/{{ room.id }}" class="room-link">{{ room.id }}</a></p>
-                                <p>
-                                    Type: Room
-                                    {% if room.type.value == 'vehicle' %}
-                                    <span class="type-tag">Vehicle</span>
-                                    {% elif room.type.value == 'vl' %}
-                                    <span class="type-tag">VL</span>
-                                    {% elif room.type.value == 'llm' %}
-                                    <span class="type-tag">LLM</span>
-                                    {% endif %}
-                                </p>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
+        <h2>Key Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-emoji">🚗</div>
+                <div class="feature-title">Vehicle State Management</div>
+                <div class="feature-description">Real-time tracking and control of vehicle states, positions, and operational parameters.</div>
             </div>
-
-            <!-- Right Column: Entities -->
-            <div class="column">
-                <div class="section">
-                    <h2>Entities</h2>
-                    <div class="counter">Total Entities: {{ entities|length }}</div>
-                    <div class="list-container">
-                        {% for entity in entities %}
-                        <div class="list-item">
-                            <div class="item-details">
-                                <h3><a href="/entities/{{ entity.id }}" class="item-link">{{ entity.name }}</a></h3>
-                                <p>ID: <a href="/entities/{{ entity.id }}" class="entity-link">{{ entity.id }}</a></p>
-                                <p>
-                                    Type: Entity
-                                    {% if entity.type.value == 'vehicle' %}
-                                    <span class="type-tag">Vehicle</span>
-                                    {% elif entity.type.value == 'llm' %}
-                                    <span class="type-tag">LLM</span>
-                                    {% endif %}
-                                </p>
-                                <p>Room: <a href="/rooms/{{ entity.room_id }}" class="room-link">{{ entity.room_id
-                                        }}</a></p>
-                            </div>
-                            <span class="status {{ entity.status }}">{{ entity.status }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
+            <div class="feature-card">
+                <div class="feature-emoji">🤖</div>
+                <div class="feature-title">LLM Agent Communication</div>
+                <div class="feature-description">Seamless interaction between autonomous vehicles and AI agents for enhanced decision-making.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-emoji">⚡</div>
+                <div class="feature-title">Real-time Updates</div>
+                <div class="feature-description">Instant WebSocket-based communication for live status updates and coordination.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-emoji">🔄</div>
+                <div class="feature-title">Batch Operations</div>
+                <div class="feature-description">Efficient handling of multiple vehicle operations and state updates simultaneously.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-emoji">🔗</div>
+                <div class="feature-title">Vehicle-to-LLM Mapping</div>
+                <div class="feature-description">Dynamic pairing of vehicles with AI agents for optimized swarm coordination.</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-emoji">📊</div>
+                <div class="feature-title">System Monitoring</div>
+                <div class="feature-description">Real-time monitoring of system health, performance metrics, and operational analytics.</div>
             </div>
         </div>
 
-        <!-- Full Width: Messages -->
-        <div class="section">
-            <h2>Recent Messages</h2>
-            <div class="counter">Showing last {{ messages|length }} messages</div>
-            <div class="list-container">
-                {% for message in messages %}
-                <div class="message">
-                    <div class="timestamp">{{ message.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</div>
-                    <p>
-                        <a href="/entities/{{ message.entity_id }}" class="entity-link"><strong>{{ message.entity_id
-                                }}</strong></a>
-                        in room
-                        <a href="/rooms/{{ message.room_id }}" class="room-link"><strong>{{ message.room_id
-                                }}</strong></a>:
-                    </p>
-                    <a href="/messages/{{ message.id }}" class="message-link">
-                        <p>{{ message.content }}</p>
-                        {% if message.state %}
-                        <p class="message-state">
-                            State: {{ message.state | tojson }}
-                        </p>
-                        {% endif %}
-                    </a>
-                </div>
-                {% endfor %}
+        <div class="grid-container">
+            <!-- Vehicle Entities Table -->
+            <div>
+                <h3 class="section-title">Vehicle Entities</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Status</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehicle in vehicles %}
+                        <tr>
+                            <td>{{ vehicle._id }}</td>
+                            <td>{{ vehicle.state.status }}</td>
+                            <td>{{ vehicle.state.position.coordinates | join(', ') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+
+            <!-- LLM Entities Table -->
+            <div>
+                <h3 class="section-title">LLM Agents</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Vehicle ID</th>
+                            <th>Messages</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for llm in llms %}
+                        <tr>
+                            <td>{{ llm._id }}</td>
+                            <td>{{ llm.vehicle_id }}</td>
+                            <td>{{ llm.messages | length }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent Messages -->
+        <div>
+            <h3 class="section-title">Recent Messages</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Source</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for message in recent_messages %}
+                    <tr>
+                        <td>{{ message.timestamp | datetime }}</td>
+                        <td>{{ message.source }}</td>
+                        <td>{{ message.message }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </body>
-
-</html>
+</html> 

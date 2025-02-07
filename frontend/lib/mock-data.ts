@@ -3,27 +3,27 @@ export const categories = [
     id: "1",
     name: "VEHICLE CHANNELS",
     rooms: [
-      { id: "v1", name: "vehicle-1", type: "vehicle" },
-      { id: "v2", name: "vehicle-2", type: "vehicle" },
-      { id: "v3", name: "vehicle-3", type: "vehicle" },
+      { id: "v1", name: "Vehicle 1 Room", type: "vehicle" },
+      { id: "v2", name: "Vehicle 2 Room", type: "vehicle" },
+      { id: "v3", name: "Vehicle 3 Room", type: "vehicle" },
     ],
   },
   {
     id: "2",
     name: "LLM CHANNELS",
     rooms: [
-      { id: "a1", name: "agent-1", type: "agent" },
-      { id: "a2", name: "agent-2", type: "agent" },
-      { id: "a3", name: "agent-3", type: "agent" },
+      { id: "l1", name: "LLM 1 Room", type: "llm" },
+      { id: "l2", name: "LLM 2 Room", type: "llm" },
+      { id: "l3", name: "LLM 3 Room", type: "llm" },
     ],
   },
   {
     id: "3",
     name: "VEH2LLM CHANNELS",
     rooms: [
-      { id: "va1", name: "veh1-agent1", type: "veh2llm" },
-      { id: "va2", name: "veh2-agent2", type: "veh2llm" },
-      { id: "va3", name: "veh3-agent3", type: "veh2llm" },
+      { id: "vl1", name: "Veh1 - LLM1", type: "vl" },
+      { id: "vl2", name: "Veh2 - LLM2", type: "vl" },
+      { id: "vl3", name: "Veh3 - LLM3", type: "vl" },
     ],
   },
 ];
@@ -55,9 +55,9 @@ export const users = [
     status: "online",
     type: "vehicle",
   },
-  { id: "a1", name: "Agent 1", roomId: "a1", status: "online", type: "agent" },
-  { id: "a2", name: "Agent 2", roomId: "a2", status: "online", type: "agent" },
-  { id: "a3", name: "Agent 3", roomId: "a3", status: "online", type: "agent" },
+  { id: "l1", name: "LLM 1", roomId: "l1", status: "online", type: "llm" },
+  { id: "l2", name: "LLM 2", roomId: "l2", status: "online", type: "llm" },
+  { id: "l3", name: "LLM 3", roomId: "l3", status: "online", type: "llm" },
 ];
 
 // Sample messages showing different types of communication

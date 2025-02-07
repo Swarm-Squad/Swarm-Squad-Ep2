@@ -4,37 +4,23 @@ import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Chat } from "@/components/chat";
 import { MessageInput } from "@/components/message-input";
-import { Room, fetchRooms } from "@/lib/api";
+import { Room } from "@/lib/api";
 import { Users, User } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { users } from "@/lib/mock-data";
+import { users, getAllRooms } from "@/lib/mock-data";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Page() {
-  const [rooms, setRooms] = useState<Room[]>([]);
   const [currentRoomId, setCurrentRoomId] = useState<string>("");
   const [wsConnected, setWsConnected] = useState(false);
+  const rooms = getAllRooms();
   const currentRoom = rooms.find((room) => room.id === currentRoomId);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function loadRooms() {
-      const fetchedRooms = await fetchRooms();
-      if (mounted) {
-        setRooms(fetchedRooms);
-        if (fetchedRooms.length > 0 && !currentRoomId) {
-          setCurrentRoomId(fetchedRooms[0].id);
-        }
-      }
+    if (!currentRoomId && rooms.length > 0) {
+      setCurrentRoomId(rooms[0].id);
     }
-
-    loadRooms();
-
-    return () => {
-      mounted = false;
-    };
-  }, [currentRoomId]);
+  }, [currentRoomId, rooms]);
 
   return (
     <div className="flex h-screen">

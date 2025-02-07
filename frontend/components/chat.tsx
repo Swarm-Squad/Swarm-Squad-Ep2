@@ -1,9 +1,9 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { messages, users } from "@/lib/mock-data";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { generateColor } from "@/lib/utils";
 import { Car, User } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import { Message, fetchMessages } from "@/lib/api";
 
 interface Message {
   id: string | number; // Allow both string and number IDs
@@ -51,62 +51,59 @@ function colorizeVehicleMessage(
 }
 
 export function Chat({ roomId }: { roomId: string }) {
-  const [allMessages, setAllMessages] = useState<Message[]>([]);
-  const { messages: vehicleMessages } = useWebSocket();
-  const messageCounterRef = useRef(0);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const { messages: wsMessages } = useWebSocket();
 
   useEffect(() => {
-    const mockRoomMessages = messages.filter(
-      (message) => message.roomId === roomId,
-    );
+    if (!roomId) return;
 
-    const vehicleMsgs = vehicleMessages.map((vm) => {
-      messageCounterRef.current += 1;
-      return {
-        // Use the ID from the WebSocket hook if available, otherwise generate one
-        id:
-          vm.id ||
-          `${vm.vehicle_id}-${Date.now()}-${messageCounterRef.current}`,
-        content: vm.message,
-        timestamp: vm.timestamp,
-        roomId,
-        isVehicle: true,
-        vehicleId: vm.vehicle_id,
-      };
-    });
+    // Load initial messages from database
+    async function loadMessages() {
+      const fetchedMessages = await fetchMessages(roomId);
+      setMessages(fetchedMessages);
+    }
+    loadMessages();
+  }, [roomId]);
 
-    setAllMessages(
-      [...mockRoomMessages, ...vehicleMsgs].sort(
-        (a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-      ),
-    );
-  }, [roomId, vehicleMessages]);
+  // Handle incoming websocket messages
+  useEffect(() => {
+    if (!roomId) return;
+
+    const newMessages = wsMessages
+      .filter(msg => msg.room_id === roomId)
+      .map(msg => ({
+        id: msg.id || Date.now(),
+        room_id: msg.room_id,
+        entity_id: msg.entity_id,
+        content: msg.message,
+        timestamp: msg.timestamp,
+        message_type: msg.type,
+        state: msg.state || {}
+      }));
+
+    if (newMessages.length > 0) {
+      setMessages(prev => [...prev, ...newMessages]);
+    }
+  }, [wsMessages, roomId]);
 
   return (
     <ScrollArea className="flex-1">
       <div className="flex justify-center w-full mt-4">
-        <div className="w-full max-w-[1500px] px-2">
+        <div className="w-full max-w-[1500px] px-4">
           <div className="space-y-4 py-4">
-            {allMessages.map((message) => {
-              const user = message.userId
-                ? users.find((u) => u.id === message.userId)
-                : null;
-              const colors = message.vehicleId
-                ? generateColor(message.vehicleId)
-                : null;
+            {messages.map((message) => {
+              const isVehicle = message.message_type === "vehicle_update";
+              const colors = isVehicle ? generateColor(message.entity_id) : null;
 
               return (
-                <div key={message.id} className="flex space-x-2">
+                <div key={message.id} className="flex space-x-4">
                   <div
-                    className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mr-2"
+                    className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center"
                     style={{
-                      backgroundColor: colors
-                        ? colors.bg
-                        : "rgb(209, 213, 219)",
+                      backgroundColor: colors?.bg || "rgb(209, 213, 219)",
                     }}
                   >
-                    {message.isVehicle ? (
+                    {isVehicle ? (
                       <Car
                         className="h-4 w-4 sm:h-6 sm:w-6"
                         style={{ color: colors?.text }}
@@ -121,7 +118,7 @@ export function Chat({ roomId }: { roomId: string }) {
                         className="font-semibold text-sm sm:text-base"
                         style={{ color: colors?.bg }}
                       >
-                        {message.isVehicle ? message.vehicleId : user?.name}
+                        {message.entity_id}
                       </span>
                       <span className="text-xs text-gray-500">
                         {new Date(message.timestamp).toLocaleTimeString()}
@@ -130,16 +127,30 @@ export function Chat({ roomId }: { roomId: string }) {
                     <p
                       className="mt-1 text-sm sm:text-base break-words"
                       dangerouslySetInnerHTML={{
-                        __html:
-                          message.isVehicle && message.vehicleId
-                            ? colorizeVehicleMessage(
-                                message.content,
-                                message.vehicleId,
-                                colors?.bg || "inherit",
-                              )
-                            : message.content,
+                        __html: isVehicle
+                          ? colorizeVehicleMessage(
+                              message.content,
+                              message.entity_id,
+                              colors?.bg || "inherit"
+                            )
+                          : message.content,
                       }}
                     />
+                    {isVehicle && message.state && (
+                      <div className="mt-1 text-xs text-gray-500">
+                        {message.state.latitude && message.state.longitude && (
+                          <span className="mr-2">
+                            Location: ({message.state.latitude.toFixed(4)}, {message.state.longitude.toFixed(4)})
+                          </span>
+                        )}
+                        {message.state.speed && (
+                          <span className="mr-2">Speed: {message.state.speed.toFixed(1)} km/h</span>
+                        )}
+                        {message.state.battery && (
+                          <span>Battery: {message.state.battery.toFixed(1)}%</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

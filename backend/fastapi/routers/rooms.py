@@ -24,16 +24,17 @@ def create_room(room: RoomCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{room_id}", response_model=RoomResponse)
-def get_room(room_id: str, db: Session = Depends(get_db)):
-    db_room = db.query(Room).filter(Room.id == room_id).first()
-    if not db_room:
-        raise HTTPException(status_code=404, detail="Room not found")
-    return db_room
+async def get_room(room_id: str, db: Session = Depends(get_db)):
+    """Get a specific room by ID."""
+    room = db.query(Room).filter(Room.id == room_id).first()
+    return room.to_dict()
 
 
 @router.get("/", response_model=List[RoomResponse])
-def list_rooms(db: Session = Depends(get_db)):
-    return db.query(Room).all()
+async def get_rooms(db: Session = Depends(get_db)):
+    """Get all rooms."""
+    rooms = db.query(Room).all()
+    return [room.to_dict() for room in rooms]
 
 
 @router.delete("/{room_id}")

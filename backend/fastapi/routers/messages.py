@@ -2,12 +2,12 @@ from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy.orm import Session
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 
 from backend.fastapi.database import get_db
 from backend.fastapi.models import Entity, Message, Room
 from backend.fastapi.routers.websocket import ws_manager
 from backend.fastapi.schemas import MessageCreate, MessageResponse
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -67,20 +67,16 @@ async def create_message(
 
 
 @router.get("/", response_model=List[MessageResponse])
-def list_messages(
-    room_id: str = None,
-    entity_id: str = None,
-    limit: int = 50,
-    db: Session = Depends(get_db),
+async def get_messages(
+    room_id: str = Query(None),
+    db: Session = Depends(get_db)
 ):
-    query = db.query(Message).order_by(Message.timestamp.desc())
-
+    """Get messages, optionally filtered by room_id."""
+    query = db.query(Message)
     if room_id:
         query = query.filter(Message.room_id == room_id)
-    if entity_id:
-        query = query.filter(Message.entity_id == entity_id)
-
-    return query.limit(limit).all()
+    messages = query.order_by(Message.timestamp.desc()).all()
+    return [message.to_dict() for message in messages]
 
 
 @router.get("/{message_id}", response_model=MessageResponse)

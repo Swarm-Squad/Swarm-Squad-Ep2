@@ -115,8 +115,8 @@ async def root(request: Request, db: Session = Depends(get_db)):
 
 # Include routers
 app.include_router(rooms.router)
-app.include_router(entities.router)
 app.include_router(messages.router)
+app.include_router(entities.router)
 app.include_router(websocket.router)
 
 

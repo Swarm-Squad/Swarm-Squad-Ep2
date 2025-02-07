@@ -2,11 +2,11 @@ from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from backend.fastapi.database import get_db
 from backend.fastapi.models import Entity, Room
 from backend.fastapi.schemas import EntityCreate, EntityResponse, EntityUpdate
-from fastapi import APIRouter, Depends, HTTPException
 
 router = APIRouter(prefix="/entities", tags=["entities"])
 
@@ -46,8 +46,16 @@ def get_entity(entity_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=List[EntityResponse])
-def list_entities(db: Session = Depends(get_db)):
-    return db.query(Entity).all()
+async def get_entities(
+    room_id: str = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Get entities, optionally filtered by room_id."""
+    query = db.query(Entity)
+    if room_id:
+        query = query.filter(Entity.room_id == room_id)
+    entities = query.all()
+    return [entity.to_dict() for entity in entities]
 
 
 @router.patch("/{entity_id}", response_model=EntityResponse)

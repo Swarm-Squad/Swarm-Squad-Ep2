@@ -38,17 +38,20 @@
    # Install and use Node.js 22
    nvm install 22
    nvm use 22
+
+   # Install pnpm
+   npm install -g pnpm@latest-10
    ```
 
 2. **Install dependencies:**
    ```bash
    cd frontend
-   npm install
+   pnpm install
    ```
 
 3. **Run development server:**
    ```bash
-   npm run dev
+   pnpm run dev
    ```
    The frontend will be available at `http://localhost:3000`
 
@@ -105,8 +108,8 @@
 ### Code Quality
 ```bash
 cd frontend
-npm run lint
-npm run format
+pnpm run lint
+pnpm run format
 
 cd backend
 ruff check

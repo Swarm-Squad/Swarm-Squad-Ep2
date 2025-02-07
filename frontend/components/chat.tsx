@@ -70,19 +70,19 @@ export function Chat({ roomId }: { roomId: string }) {
     if (!roomId) return;
 
     const newMessages = wsMessages
-      .filter(msg => msg.room_id === roomId)
-      .map(msg => ({
+      .filter((msg) => msg.room_id === roomId)
+      .map((msg) => ({
         id: msg.id || Date.now(),
         room_id: msg.room_id,
         entity_id: msg.entity_id,
         content: msg.message,
         timestamp: msg.timestamp,
         message_type: msg.type,
-        state: msg.state || {}
+        state: msg.state || {},
       }));
 
     if (newMessages.length > 0) {
-      setMessages(prev => [...prev, ...newMessages]);
+      setMessages((prev) => [...prev, ...newMessages]);
     }
   }, [wsMessages, roomId]);
 
@@ -93,7 +93,9 @@ export function Chat({ roomId }: { roomId: string }) {
           <div className="space-y-4 py-4">
             {messages.map((message) => {
               const isVehicle = message.message_type === "vehicle_update";
-              const colors = isVehicle ? generateColor(message.entity_id) : null;
+              const colors = isVehicle
+                ? generateColor(message.entity_id)
+                : null;
 
               return (
                 <div key={message.id} className="flex space-x-4">
@@ -131,7 +133,7 @@ export function Chat({ roomId }: { roomId: string }) {
                           ? colorizeVehicleMessage(
                               message.content,
                               message.entity_id,
-                              colors?.bg || "inherit"
+                              colors?.bg || "inherit",
                             )
                           : message.content,
                       }}
@@ -140,14 +142,19 @@ export function Chat({ roomId }: { roomId: string }) {
                       <div className="mt-1 text-xs text-gray-500">
                         {message.state.latitude && message.state.longitude && (
                           <span className="mr-2">
-                            Location: ({message.state.latitude.toFixed(4)}, {message.state.longitude.toFixed(4)})
+                            Location: ({message.state.latitude.toFixed(4)},{" "}
+                            {message.state.longitude.toFixed(4)})
                           </span>
                         )}
                         {message.state.speed && (
-                          <span className="mr-2">Speed: {message.state.speed.toFixed(1)} km/h</span>
+                          <span className="mr-2">
+                            Speed: {message.state.speed.toFixed(1)} km/h
+                          </span>
                         )}
                         {message.state.battery && (
-                          <span>Battery: {message.state.battery.toFixed(1)}%</span>
+                          <span>
+                            Battery: {message.state.battery.toFixed(1)}%
+                          </span>
                         )}
                       </div>
                     )}

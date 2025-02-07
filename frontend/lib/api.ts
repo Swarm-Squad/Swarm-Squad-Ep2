@@ -32,7 +32,7 @@ export interface Entity {
   last_seen: string;
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = "http://localhost:8000";
 
 export async function fetchRooms(): Promise<Room[]> {
   try {
@@ -42,7 +42,7 @@ export async function fetchRooms(): Promise<Room[]> {
     }
     return response.json();
   } catch (error) {
-    console.error('Error fetching rooms:', error);
+    console.error("Error fetching rooms:", error);
     return [];
   }
 }
@@ -50,13 +50,15 @@ export async function fetchRooms(): Promise<Room[]> {
 export async function fetchMessages(roomId: string): Promise<Message[]> {
   try {
     // Get the base vehicle ID from the room ID (e.g., 'v1' from 'vl1')
-    const vehicleId = roomId.replace('vl', 'v');
-    const vlRoomId = `vl${vehicleId.replace('v', '')}`;
+    const vehicleId = roomId.replace("vl", "v");
+    const vlRoomId = `vl${vehicleId.replace("v", "")}`;
 
     // Fetch messages from both rooms if it's a vehicle room
     const responses = await Promise.all([
       fetch(`${API_BASE}/messages?room_id=${roomId}`),
-      roomId.startsWith('v') ? fetch(`${API_BASE}/messages?room_id=${vlRoomId}`) : Promise.resolve(null)
+      roomId.startsWith("v")
+        ? fetch(`${API_BASE}/messages?room_id=${vlRoomId}`)
+        : Promise.resolve(null),
     ]);
 
     if (!responses[0].ok) {
@@ -66,14 +68,15 @@ export async function fetchMessages(roomId: string): Promise<Message[]> {
     const messages = await responses[0].json();
     if (responses[1] && responses[1].ok) {
       const vlMessages = await responses[1].json();
-      return [...messages, ...vlMessages].sort((a, b) => 
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      return [...messages, ...vlMessages].sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
       );
     }
 
     return messages;
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    console.error("Error fetching messages:", error);
     return [];
   }
 }
@@ -81,4 +84,4 @@ export async function fetchMessages(roomId: string): Promise<Message[]> {
 export async function fetchEntities(roomId: string): Promise<Entity[]> {
   const response = await fetch(`${API_BASE}/entities?room_id=${roomId}`);
   return response.json();
-} 
+}

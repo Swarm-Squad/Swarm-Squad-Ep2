@@ -12,22 +12,31 @@ export default function Page() {
   const currentRoom = rooms.find((room) => room.id === currentRoomId);
 
   useEffect(() => {
+    let mounted = true;
+
     async function loadRooms() {
       const fetchedRooms = await fetchRooms();
-      setRooms(fetchedRooms);
-      if (fetchedRooms.length > 0 && !currentRoomId) {
-        setCurrentRoomId(fetchedRooms[0].id);
+      if (mounted) {
+        setRooms(fetchedRooms);
+        if (fetchedRooms.length > 0 && !currentRoomId) {
+          setCurrentRoomId(fetchedRooms[0].id);
+        }
       }
     }
+
     loadRooms();
-  }, []);
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentRoomId]);
 
   return (
     <div className="flex h-screen">
-      <Sidebar 
+      <Sidebar
         rooms={rooms}
-        currentRoomId={currentRoomId} 
-        onRoomChange={setCurrentRoomId} 
+        currentRoomId={currentRoomId}
+        onRoomChange={setCurrentRoomId}
       />
       <div className="flex-1 flex flex-col">
         <div className="h-14 flex items-center justify-center px-4 border-b border-border">

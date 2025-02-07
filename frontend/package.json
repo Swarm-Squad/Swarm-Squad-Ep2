@@ -7,7 +7,7 @@
     "build": "pnpm dlx next build",
     "start": "pnpm dlx next start",
     "lint": "pnpm dlx next lint --dir .",
-    "format": "pnpm dlx prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "format": "pnpm dlx prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .prettierignore"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",

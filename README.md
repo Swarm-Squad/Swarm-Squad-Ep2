@@ -167,11 +167,12 @@ pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre
  ┃ ┣ 📂lib
  ┃ ┣ 📂public
  ┃ ┣ 📄.eslintrc.json
+ ┃ ┣ 📄.npmrc
  ┃ ┣ 📄components.json
  ┃ ┣ 📄next-env.d.ts
  ┃ ┣ 📄next.config.mjs
- ┃ ┣ 📄package-lock.json
  ┃ ┣ 📄package.json
+ ┃ ┣ 📄pnpm-lock.yaml
  ┃ ┣ 📄postcss.config.mjs
  ┃ ┣ 📄tailwind.config.ts
  ┃ ┗ 📄tsconfig.json

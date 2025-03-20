@@ -1,10 +1,9 @@
 import math
 from typing import List, Set, Tuple, Type, TypeVar
 
+from fastapi import WebSocket
 from sqlalchemy import select
 from sqlmodel.ext.asyncio.session import AsyncSession
-
-from fastapi import WebSocket
 
 T = TypeVar("T")
 

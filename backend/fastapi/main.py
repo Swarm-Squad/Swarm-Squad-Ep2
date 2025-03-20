@@ -6,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 
 import uvicorn
-
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles

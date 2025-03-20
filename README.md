@@ -119,7 +119,7 @@ ruff format
 
 ### Pre-commit Hooks
 ```bash
-uv pip install ruff pre-commit
+uv pip install pre-commit
 pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push
 ```
 

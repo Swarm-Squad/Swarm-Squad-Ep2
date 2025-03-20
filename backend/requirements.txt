@@ -7,3 +7,4 @@ websockets
 sqlmodel
 jinja2
 aiofiles
+ruff

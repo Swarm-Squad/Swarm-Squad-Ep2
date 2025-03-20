@@ -5,9 +5,10 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import aiohttp
-from backend.fastapi.models import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+
+from backend.fastapi.models import Base
 
 # Get the project root directory
 project_root = os.path.dirname(

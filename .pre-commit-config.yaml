@@ -4,7 +4,20 @@ repos:
   hooks:
     - id: ruff
       args: [--fix]
+      name: 'backend: ruff (check and fix)'
+      pass_filenames: false
+      always_run: true
+      files: ^backend/
+    - id: ruff
+      args: [--select=I, --fix]
+      name: 'backend: ruff (import sorting)'
+      pass_filenames: false
+      always_run: true
+      files: ^backend/
     - id: ruff-format
+      name: 'backend: ruff (format)'
+      pass_filenames: false
+      always_run: true
       files: ^backend/
 
 - repo: local
@@ -14,9 +27,12 @@ repos:
       entry: python .pre-commit_msg_template.py
       language: python
       stages: [commit-msg]
+      always_run: true
+
     - id: frontend-lint
-      name: Frontend lint
+      name: 'frontend: eslint'
       entry: bash -c 'cd frontend && pnpm run lint && pnpm run format'
       language: system
       files: ^frontend/
       pass_filenames: false
+      always_run: true

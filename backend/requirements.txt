@@ -9,3 +9,6 @@ jinja2
 aiofiles
 ruff
 pre-commit
+aiohttp
+matplotlib
+numpy

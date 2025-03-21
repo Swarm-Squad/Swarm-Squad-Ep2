@@ -6,24 +6,9 @@
 </div>
 
 <div align="center">
-  <h2>🎨 Frontend (Next.js)</h2>
+  <h2>🚀 Getting Started</h2>
 </div>
 
-### Features
-- 🌗 Dark/Light mode support
-- 📱 Responsive design
-- 🎨 Modern UI with Shadcn/UI components
-- 🔄 Real-time chat interface
-- 🖼️ Image sharing capabilities
-- 👥 User management interface
-- 🚫 Admin panel with ban/kick functionality
-
-### Tech Stack
-- Next.js 14
-- TypeScript
-- Tailwind CSS
-- Shadcn/UI Components
-- Socket.io Client
 
 ### Setup & Installation
 
@@ -53,6 +38,19 @@
    make install-pre-commit  # Install pre-commit hooks only
    ```
 
+The project uses several pre-commit hooks to ensure code quality:
+
+- **Commit Message Hook**: Ensures commit messages follow the project's format
+- **Pre-commit Hook**: Runs code quality checks before commits
+- **Pre-push Hook**: Runs checks before pushing to remote
+- **Additional Hooks**:
+  - `end-of-file-fixer`: Ensures files end with a newline
+  - `trailing-whitespace`: Removes trailing whitespace
+  - `ruff`: Lints and formats Python code
+  - `eslint`: Lints and formats JavaScript/TypeScript code
+
+These hooks are automatically installed when running `make install` or can be installed separately with `make install-pre-commit`.
+
 3. **Start Development Servers:**
    ```bash
    # Start both frontend and backend
@@ -77,21 +75,6 @@
    # Clean up running processes
    make clean
    ```
-
-### Pre-commit Hooks
-The project uses several pre-commit hooks to ensure code quality:
-
-- **Commit Message Hook**: Ensures commit messages follow the project's format
-- **Pre-commit Hook**: Runs code quality checks before commits
-- **Pre-push Hook**: Runs checks before pushing to remote
-- **Additional Hooks**:
-  - `check-yaml`: Validates YAML file formatting
-  - `end-of-file-fixer`: Ensures files end with a newline
-  - `trailing-whitespace`: Removes trailing whitespace
-  - `ruff`: Lints and formats Python code
-  - `eslint`: Lints and formats JavaScript/TypeScript code
-
-These hooks are automatically installed when running `make install` or can be installed separately with `make install-pre-commit`.
 
 <div align="center">
   <h2>📁 Project Structure</h2>

@@ -4,18 +4,22 @@ import sys
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+# Configure paths to ensure imports work correctly
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from backend.fastapi.database import (
     close_mongo_connection,
     connect_to_mongo,
     get_collection,
+    is_db_connected,
 )
 from backend.fastapi.routers import batch, llms, realtime, veh2llm, vehicles
 
@@ -29,8 +33,11 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Manage application lifecycle events."""
     # Startup: Connect to MongoDB
-    await connect_to_mongo()
+    connection_success = await connect_to_mongo()
+    if not connection_success:
+        logger.warning("Failed to connect to MongoDB during startup")
     yield
     # Shutdown: Close MongoDB connection
     await close_mongo_connection()
@@ -56,15 +63,45 @@ app.add_middleware(
 # Mount static files directory
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+
+# Add favicon route
+@app.get("/favicon.ico")
+async def get_favicon():
+    """Serve the favicon"""
+    return RedirectResponse(url="/static/favicon.ico")
+
+
 # Setup templates
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 # Add datetime filter for Jinja2
-def datetime_filter(timestamp):
-    if timestamp:
+def datetime_filter(timestamp: Union[str, float, int, None]) -> str:
+    """
+    Convert various timestamp formats to a readable date string.
+
+    Args:
+        timestamp: Timestamp value to format (string, float, int)
+
+    Returns:
+        Formatted datetime string or empty string if conversion fails
+    """
+    if timestamp is None:
+        return ""
+
+    try:
+        # Handle string timestamps
+        if isinstance(timestamp, str):
+            try:
+                timestamp = float(timestamp)
+            except ValueError:
+                return timestamp
+
+        # Convert to datetime string
         return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
-    return ""
+    except (ValueError, TypeError, OverflowError) as e:
+        logger.debug(f"Error converting timestamp {timestamp}: {e}")
+        return str(timestamp)
 
 
 templates.env.filters["datetime"] = datetime_filter
@@ -79,13 +116,27 @@ app.include_router(batch.router)
 
 @app.get("/")
 async def root(request: Request):
-    """Serve the index page with live data"""
+    """
+    Serve the index page with live data from the database.
+
+    Includes:
+    - List of vehicles with their latest states
+    - List of LLM agents
+    - Recent messages from vehicles and LLMs
+    """
     try:
+        if not is_db_connected():
+            logger.warning("Database not connected when accessing index page")
+            raise Exception("Database connection not available")
+
         # Get collections
         vehicles_collection = get_collection("vehicles")
         llms_collection = get_collection("llms")
 
-        # Get all vehicles
+        if vehicles_collection is None or llms_collection is None:
+            raise Exception("Required collections not available")
+
+        # Get all vehicles with complete state information
         vehicles = await vehicles_collection.find().to_list(None)
 
         # Get all LLM agents
@@ -94,12 +145,10 @@ async def root(request: Request):
         # Get recent messages from both vehicles and LLMs
         recent_messages = []
 
-        # Get vehicle messages
+        # Get vehicle messages - only the 5 most recent per vehicle
         async for vehicle in vehicles_collection.find():
             if vehicle.get("messages"):
-                for msg in vehicle["messages"][
-                    -5:
-                ]:  # Last 5 messages from each vehicle
+                for msg in vehicle["messages"][-5:]:
                     recent_messages.append(
                         {
                             "timestamp": msg.get("timestamp"),
@@ -108,10 +157,17 @@ async def root(request: Request):
                         }
                     )
 
-        # Get LLM messages
+                    # Update vehicle state from the latest message
+                    if msg.get("state"):
+                        for v in vehicles:
+                            if v["_id"] == vehicle["_id"]:
+                                v["state"] = msg.get("state")
+                                break
+
+        # Get LLM messages - only the 5 most recent per LLM
         async for llm in llms_collection.find():
             if llm.get("messages"):
-                for msg in llm["messages"][-5:]:  # Last 5 messages from each LLM
+                for msg in llm["messages"][-5:]:
                     recent_messages.append(
                         {
                             "timestamp": msg.get("timestamp"),
@@ -126,6 +182,7 @@ async def root(request: Request):
         )
         recent_messages = recent_messages[:10]
 
+        # Return the template with data
         return templates.TemplateResponse(
             "index.html",
             {
@@ -137,7 +194,17 @@ async def root(request: Request):
         )
     except Exception as e:
         logger.error(f"Error loading index page: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error loading data from database")
+        # Provide fallback data when DB is not accessible
+        return templates.TemplateResponse(
+            "index.html",
+            {
+                "request": request,
+                "vehicles": [],
+                "llms": [],
+                "recent_messages": [],
+                "error_message": "Database connection issue. The system is running but data display is temporarily unavailable.",
+            },
+        )
 
 
 if __name__ == "__main__":

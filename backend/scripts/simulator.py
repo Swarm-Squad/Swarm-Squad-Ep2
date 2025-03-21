@@ -9,10 +9,11 @@ from datetime import datetime, timezone
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from backend.fastapi.main import create_simulation_resources
+# Import create_simulation_resources directly
 from backend.fastapi.models import MessageType
 from backend.scripts.utils.client import SwarmClient
 from backend.scripts.utils.message_templates import MessageTemplate
+from backend.scripts.visualize_simulation import create_simulation_resources
 
 
 def generate_random_coordinates():

@@ -1,7 +1,21 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.declarative import declarative_base
+
+# Create Base for SQLAlchemy models
+Base = declarative_base()
+
+
+# Message type enum for categorizing messages
+class MessageType(str, Enum):
+    VEHICLE_UPDATE = "vehicle_update"
+    LLM_RESPONSE = "llm_response"
+    SYSTEM_NOTIFICATION = "system_notification"
+    VEHICLE_ALERT = "vehicle_alert"
+    NETWORK_STATUS = "network_status"
 
 
 class Position(BaseModel):

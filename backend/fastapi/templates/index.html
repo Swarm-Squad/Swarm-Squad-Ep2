@@ -150,6 +150,13 @@
 <body>
     <div class="container">
         <h1>Swarm Squad: The Digital Dialogue</h1>
+
+        {% if error_message %}
+        <div style="background-color: #fee2e2; color: #b91c1c; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; text-align: center;">
+            <strong>Error:</strong> {{ error_message }}
+        </div>
+        {% endif %}
+
         <p class="welcome-text">Welcome to the Swarm Squad API platform.<br>This system manages communication and
             coordination between Vehicles and LLM agents in a swarm environment.</p>
         <div class="button-container">
@@ -213,8 +220,13 @@
                         {% for vehicle in vehicles %}
                         <tr>
                             <td>{{ vehicle._id }}</td>
-                            <td>{{ vehicle.state.status }}</td>
-                            <td>{{ vehicle.state.position.coordinates | join(', ') }}</td>
+                            <td>{{ vehicle.get('state', {}).get('status', 'unknown') }}</td>
+                            <td>{% if vehicle.get('state', {}).get('latitude') and vehicle.get('state', {}).get('longitude') %}
+                                ({{ vehicle.get('state', {}).get('latitude', 0)|round(2) }}, {{ vehicle.get('state', {}).get('longitude', 0)|round(2) }})
+                                {% else %}
+                                Unknown
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -236,8 +248,8 @@
                         {% for llm in llms %}
                         <tr>
                             <td>{{ llm._id }}</td>
-                            <td>{{ llm.vehicle_id }}</td>
-                            <td>{{ llm.messages | length }}</td>
+                            <td>{{ llm.get('vehicle_id', 'none') }}</td>
+                            <td>{{ llm.get('messages', []) | length }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -259,9 +271,9 @@
                 <tbody>
                     {% for message in recent_messages %}
                     <tr>
-                        <td>{{ message.timestamp | datetime }}</td>
-                        <td>{{ message.source }}</td>
-                        <td>{{ message.message }}</td>
+                        <td>{{ message.get('timestamp', '') | datetime }}</td>
+                        <td>{{ message.get('source', 'Unknown') }}</td>
+                        <td>{{ message.get('message', '') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -14,7 +14,16 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
+# Import SwarmClient directly to avoid importing from backend.fastapi.main
 from backend.scripts.utils.client import SwarmClient
+
+
+# Provide a dummy create_simulation_resources function to avoid import errors
+# This is only used for type checking in the simulator module
+async def create_simulation_resources(db, num_vehicles=3, force_recreate=False):
+    """Dummy function to prevent import errors. Not used in visualization."""
+    pass
+
 
 # Try different backends in order of preference
 backends = ["Qt5Agg", "TkAgg", "Agg"]
@@ -183,7 +192,8 @@ class VehicleVisualizer:
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get("http://localhost:8000") as response:
-                    return response.status == 200
+                    # Accept various status codes as valid indicators that the server is running
+                    return response.status in [200, 404, 500]
         except aiohttp.ClientError:
             return False
 

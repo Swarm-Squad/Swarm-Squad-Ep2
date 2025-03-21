@@ -8,3 +8,4 @@ sqlmodel
 jinja2
 aiofiles
 ruff
+pre-commit

@@ -1,6 +1,20 @@
 repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v5.0.0
+  hooks:
+    - id: end-of-file-fixer
+      name: 'global: fix end of files'
+    - id: trailing-whitespace
+      name: 'global: trim trailing whitespace'
+    - id: check-added-large-files
+      name: 'global: check for large files'
+    - id: check-merge-conflict
+      name: 'global: check for merge conflicts'
+    - id: check-case-conflict
+      name: 'global: check for case conflicts'
+
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: 'v0.9.3'
+  rev: 'v0.11.0'
   hooks:
     - id: ruff
       args: [--fix]
@@ -23,7 +37,7 @@ repos:
 - repo: local
   hooks:
     - id: commit-msg-template
-      name: Check commit message format
+      name: 'global: check commit message format'
       entry: python .pre-commit_msg_template.py
       language: python
       stages: [commit-msg]

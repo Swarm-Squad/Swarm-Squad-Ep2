@@ -27,101 +27,71 @@
 
 ### Setup & Installation
 
-1. **Install Node.js using nvm:**
+1. **Install Prerequisites:**
    ```bash
-   # Install nvm
+   # Install nvm (Node Version Manager)
    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-   
+
    # Reload shell configuration
    source ~/.bashrc  # or source ~/.zshrc
-   
-   # Install and use Node.js 22
-   nvm install 22
-   nvm use 22
 
-   # Install pnpm
+   # Install uv (Python package manager)
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+
+   # Install pnpm (Node.js package manager)
    npm install -g pnpm@latest-10
    ```
 
-2. **Install dependencies:**
+2. **Install Project Dependencies:**
    ```bash
-   cd frontend
-   pnpm install
+   # Install everything (both frontend and backend + pre-commit hooks)
+   make install
+
+   # Or install components individually:
+   make install-frontend    # Install frontend dependencies only
+   make install-backend     # Install backend dependencies only
+   make install-pre-commit  # Install pre-commit hooks only
    ```
 
-3. **Run development server:**
+3. **Start Development Servers:**
    ```bash
-   pnpm run dev
+   # Start both frontend and backend
+   make dev
+
+   # Or start them individually:
+   make frontend  # Start only frontend
+   make backend   # Start only backend
    ```
    The frontend will be available at `http://localhost:3000`
-
-<div align="center">
-  <h2>🔧 Backend (FastAPI)</h2>
-</div>
-
-### Features
-- 🔌 WebSocket server for real-time communication
-- 🔐 User authentication and session management
-- 📤 File upload handling
-- 👮 Admin controls and user moderation
-- 🗄️ User state management
-
-### Tech Stack
-- FastAPI
-- Python 3.11+
-- WebSockets
-
-### Setup & Installation
-
-1. **Install uv:**
-   ```bash
-   # macOS/Linux
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-
-   # Windows
-   powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-   ```
-
-2. **Create and activate virtual environment:**
-   ```bash
-   cd backend
-   uv venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   uv pip install -r backend/requirements.txt
-   ```
-
-4. **Run the server:**
-   ```bash
-   cd backend/fastapi
-   uv run main.py
-   ```
    The backend API will be available at `http://localhost:8000`
 
-<div align="center">
-  <h2>🛠️ Development Tools</h2>
-</div>
+4. **Development Tools:**
+   ```bash
+   # Run all code quality checks
+   make lint
 
-### Code Quality
-```bash
-cd frontend
-pnpm run lint
-pnpm run format
+   # Or run them individually:
+   make lint-frontend  # Lint and format frontend only
+   make lint-backend   # Lint and format backend only
 
-cd backend
-ruff check
-ruff check --select I --fix
-ruff format
-```
+   # Clean up running processes
+   make clean
+   ```
 
 ### Pre-commit Hooks
-```bash
-uv pip install pre-commit
-pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push
-```
+The project uses several pre-commit hooks to ensure code quality:
+
+- **Commit Message Hook**: Ensures commit messages follow the project's format
+- **Pre-commit Hook**: Runs code quality checks before commits
+- **Pre-push Hook**: Runs checks before pushing to remote
+- **Additional Hooks**:
+  - `check-yaml`: Validates YAML file formatting
+  - `end-of-file-fixer`: Ensures files end with a newline
+  - `trailing-whitespace`: Removes trailing whitespace
+  - `ruff`: Lints and formats Python code
+  - `eslint`: Lints and formats JavaScript/TypeScript code
+
+These hooks are automatically installed when running `make install` or can be installed separately with `make install-pre-commit`.
 
 <div align="center">
   <h2>📁 Project Structure</h2>

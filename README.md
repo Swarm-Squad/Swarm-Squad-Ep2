@@ -131,7 +131,7 @@ These hooks are automatically installed when running `make install` or can be in
  ┃ ┗ 📄tsconfig.json
  ┣ 📄.gitignore
  ┣ 📄.pre-commit-config.yaml
- ┣ 📄.pre-commit_msg_template.py
+ ┣ 📄.pre-commit-msg_template.py
  ┣ 📄LICENSE
  ┗ 📄README.md
 ```

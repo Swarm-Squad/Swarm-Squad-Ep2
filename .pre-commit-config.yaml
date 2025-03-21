@@ -38,7 +38,7 @@ repos:
   hooks:
     - id: commit-msg-template
       name: 'global: check commit message format'
-      entry: python .pre-commit_msg_template.py
+      entry: python .pre-commit-msg_template.py
       language: python
       stages: [commit-msg]
       always_run: true

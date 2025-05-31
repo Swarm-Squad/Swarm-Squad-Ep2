@@ -28,8 +28,8 @@ def create_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  swarm-squad-ep2 install                # Install frontend dependencies
-  swarm-squad-ep2 build                  # Build frontend for production
+  swarm-squad-ep2 install                # Install frontend dependencies (dev only)
+  swarm-squad-ep2 build                  # Build frontend for production (dev only)
   swarm-squad-ep2 launch                 # Launch both backend and frontend
   swarm-squad-ep2 setup                  # Run vehicle simulation
   swarm-squad-ep2 setup visualize        # Run matplotlib visualization

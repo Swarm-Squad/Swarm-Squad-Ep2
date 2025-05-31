@@ -9,10 +9,10 @@
   <h2>🚀 Getting Started</h2>
 </div>
 
-
 ### Setup & Installation
 
 1. **Install Prerequisites:**
+
    ```bash
    # Install nvm (Node Version Manager)
    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
@@ -28,6 +28,7 @@
    ```
 
 2. **Install Project Dependencies:**
+
    ```bash
    # Install everything (both frontend and backend + pre-commit hooks)
    make install
@@ -52,6 +53,7 @@ The project uses several pre-commit hooks to ensure code quality:
 These hooks are automatically installed when running `make install` or can be installed separately with `make install-pre-commit`.
 
 3. **Start Development Servers:**
+
    ```bash
    # Start both frontend and backend
    make dev
@@ -60,10 +62,12 @@ These hooks are automatically installed when running `make install` or can be in
    make frontend  # Start only frontend
    make backend   # Start only backend
    ```
+
    The frontend will be available at `http://localhost:3000`
    The backend API will be available at `http://localhost:8000`
 
 4. **Development Tools:**
+
    ```bash
    # Run all code quality checks
    make lint

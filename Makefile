@@ -60,8 +60,8 @@ install-pre-commit:
 	@echo "-----------------------------------------------"
 	@echo "🔧 Installing pre-commit hooks..."
 	@echo "-----------------------------------------------"
-	@cd backend && source .venv/bin/activate && \
-	if ! pre-commit install --hook-type commit-msg --hook-type pre-commit --hook-type pre-push; then \
+	@cd backend/ && source .venv/bin/activate && \
+	if ! pre-commit install --install-hooks; then \
 		echo "❌ Failed to install pre-commit hooks"; \
 		exit 1; \
 	fi

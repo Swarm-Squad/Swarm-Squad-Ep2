@@ -39,6 +39,7 @@ repos:
         additional_dependencies: [prettier@3.5.3]
         files: \.(js|jsx|ts|tsx|yml|toml|json|html|css|scss|md|mdx)$
         always_run: true
+        exclude: '(^|/)out/'  #
 
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.2.0

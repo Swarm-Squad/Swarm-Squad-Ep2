@@ -9,6 +9,8 @@
 
 <h2 align="center">🚀 Getting Started</h2>
 
+**For End Users:**
+
 It is recommended to use [uv](https://docs.astral.sh/uv/getting-started/installation/) to create a virtual environment and install the following package.
 
 ```bash
@@ -22,6 +24,8 @@ swarm-squad-ep2
 # or
 swarm-squad-ep2 --help
 ```
+
+**Note:** The installed package includes a built version of the frontend. All commands work out of the box without needing to clone the repository or install frontend dependencies separately.
 
 <h2 align="center">🎮 CLI Commands</h2>
 
@@ -48,6 +52,16 @@ swarm-squad-ep2 webui
 
 # Launch both backend and frontend
 swarm-squad-ep2 launch
+
+# Build frontend for packaging (development only)
+swarm-squad-ep2 build
+```
+
+**Package Building:**
+
+```bash
+# Build complete package (frontend + wheel + sdist)
+./scripts/build-package.sh
 ```
 
 <div align="center">
@@ -90,6 +104,49 @@ swarm-squad-ep2 launch
    ```
 
 <div align="center">
+  <h2>📦 Building the Package</h2>
+</div>
+
+**Option 1: Simple Build Script (Recommended)**
+
+```bash
+# One command builds everything (frontend + package)
+./scripts/build-package.sh
+```
+
+**Option 2: Manual Build Process**
+
+1. **Build the frontend:**
+
+   ```bash
+   # Build the frontend and prepare it for packaging
+   swarm-squad-ep2 build
+   ```
+
+2. **Build the Python package:**
+
+   ```bash
+   # Build wheel with frontend included
+   uv build --wheel
+
+   # Build source distribution (optional)
+   uv build --sdist
+   ```
+
+   ⚠️ **Note:** Use `--wheel` or `--sdist` flags separately, not `uv build` alone due to force-include limitations.
+
+3. **Install the built wheel:**
+
+   ```bash
+   uv pip install dist/swarm_squad_ep2-*.whl
+   ```
+
+**The built package works in two modes:**
+
+- **Development Mode**: When run from the source directory, uses live Next.js dev server
+- **Installed Mode**: When installed as a wheel, serves pre-built static frontend files
+
+<div align="center">
   <h2>👨‍💻 Development Setup</h2>
 </div>
 
@@ -115,14 +172,15 @@ swarm-squad-ep2 launch
 
 3. **Run the application:**
    ```bash
-   uv run backend/swarm_squad_ep2/main.py
+   uv run src/swarm_squad_ep2/main.py
    ```
 
 <h2 align="center">📁 File Tree</h2>
 
 ```
-📂backend
- ┗ 📦swarm_squad_ep2
+
+📦src
+ ┗ 📂swarm_squad_ep2
  ┃ ┣ 📂api
  ┃ ┃ ┣ 📂routers
  ┃ ┃ ┃ ┣ 📄batch.py
@@ -140,6 +198,7 @@ swarm-squad-ep2 launch
  ┃ ┃ ┣ 📄utils.py
  ┃ ┃ ┗ 📄vehicle_sim.db
  ┃ ┣ 📂cli
+ ┃ ┃ ┣ 📄build.py
  ┃ ┃ ┣ 📄fastapi.py
  ┃ ┃ ┣ 📄install.py
  ┃ ┃ ┣ 📄launch.py
@@ -154,43 +213,40 @@ swarm-squad-ep2 launch
  ┃ ┃ ┣ 📄simulator.py
  ┃ ┃ ┣ 📄test_client.py
  ┃ ┃ ┗ 📄visualize_simulation.py
+ ┃ ┣ 📂web
+ ┃ ┃ ┣ 📂app
+ ┃ ┃ ┃ ┣ 📄globals.css
+ ┃ ┃ ┃ ┣ 📄layout.tsx
+ ┃ ┃ ┃ ┗ 📄page.tsx
+ ┃ ┃ ┣ 📂components
+ ┃ ┃ ┃ ┣ 📂ui
+ ┃ ┃ ┃ ┣ 📄category-header.tsx
+ ┃ ┃ ┃ ┣ 📄chat.tsx
+ ┃ ┃ ┃ ┣ 📄emoji-picker.tsx
+ ┃ ┃ ┃ ┣ 📄message-input.tsx
+ ┃ ┃ ┃ ┣ 📄sidebar.tsx
+ ┃ ┃ ┃ ┣ 📄theme-provider.tsx
+ ┃ ┃ ┃ ┗ 📄theme-toggle.tsx
+ ┃ ┃ ┣ 📂hooks
+ ┃ ┃ ┃ ┣ 📄use-mobile.tsx
+ ┃ ┃ ┃ ┣ 📄use-toast.ts
+ ┃ ┃ ┃ ┗ 📄use-websocket.ts
+ ┃ ┃ ┣ 📂lib
+ ┃ ┃ ┃ ┣ 📄api.ts
+ ┃ ┃ ┃ ┣ 📄mock-data.ts
+ ┃ ┃ ┃ ┗ 📄utils.ts
+ ┃ ┃ ┣ 📂pages
+ ┃ ┃ ┣ 📂public
+ ┃ ┃ ┃ ┗ 📄favicon.ico
+ ┃ ┃ ┣ 📄.eslintrc.json
+ ┃ ┃ ┣ 📄.prettierignore
+ ┃ ┃ ┣ 📄components.json
+ ┃ ┃ ┣ 📄next-env.d.ts
+ ┃ ┃ ┣ 📄next.config.mjs
+ ┃ ┃ ┣ 📄package.json
+ ┃ ┃ ┣ 📄pnpm-lock.yaml
+ ┃ ┃ ┣ 📄postcss.config.mjs
+ ┃ ┃ ┣ 📄tailwind.config.ts
+ ┃ ┃ ┗ 📄tsconfig.json
  ┃ ┗ 📄main.py
-```
-
-```
-📂frontend
- ┣ 📂app
- ┃ ┣ 📄globals.css
- ┃ ┣ 📄layout.tsx
- ┃ ┗ 📄page.tsx
- ┣ 📂components
- ┃ ┣ 📂ui
- ┃ ┣ 📄category-header.tsx
- ┃ ┣ 📄chat.tsx
- ┃ ┣ 📄emoji-picker.tsx
- ┃ ┣ 📄message-input.tsx
- ┃ ┣ 📄sidebar.tsx
- ┃ ┣ 📄theme-provider.tsx
- ┃ ┗ 📄theme-toggle.tsx
- ┣ 📂hooks
- ┃ ┣ 📄use-mobile.tsx
- ┃ ┣ 📄use-toast.ts
- ┃ ┗ 📄use-websocket.ts
- ┣ 📂lib
- ┃ ┣ 📄api.ts
- ┃ ┣ 📄mock-data.ts
- ┃ ┗ 📄utils.ts
- ┣ 📂pages
- ┣ 📂public
- ┃ ┗ 📄favicon.ico
- ┣ 📄.eslintrc.json
- ┣ 📄.prettierignore
- ┣ 📄components.json
- ┣ 📄next-env.d.ts
- ┣ 📄next.config.mjs
- ┣ 📄package.json
- ┣ 📄pnpm-lock.yaml
- ┣ 📄postcss.config.mjs
- ┣ 📄tailwind.config.ts
- ┗ 📄tsconfig.json
 ```

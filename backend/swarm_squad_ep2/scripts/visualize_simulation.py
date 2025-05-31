@@ -1,7 +1,5 @@
 import asyncio
 import json
-import os
-import sys
 from datetime import datetime
 
 import aiohttp
@@ -9,13 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Add the project root to Python path
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-# Import SwarmClient directly to avoid importing from backend.fastapi.main
-from backend.scripts.utils.client import SwarmClient
+from swarm_squad_ep2.scripts.utils.client import SwarmClient
 
 
 # Provide a dummy create_simulation_resources function to avoid import errors
@@ -373,10 +365,9 @@ class VehicleVisualizer:
             )
             print("Please make sure to:")
             print("1. Start the FastAPI server first:")
-            print("   cd backend")
-            print("   uvicorn fastapi.main:app --reload")
+            print("   swarm-squad-ep2 fastapi")
             print("\n2. Then start the simulation:")
-            print("   python -m backend.scripts.run_simulation")
+            print("   swarm-squad-ep2 setup")
             print("\n3. Finally, run this visualization")
             return
 

@@ -1,14 +1,7 @@
 import asyncio
 import json
-import os
-import sys
 
-# Add the project root to Python path
-sys.path.append(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-
-from backend.scripts.utils.client import SwarmClient
+from swarm_squad_ep2.scripts.utils.client import SwarmClient
 
 
 async def monitor_room(client: SwarmClient, room_id: str):

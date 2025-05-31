@@ -1,6 +1,4 @@
 import logging
-import os
-import sys
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
@@ -13,15 +11,14 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-# Configure paths to ensure imports work correctly
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from backend.fastapi.database import (
+# Import from proper package structure
+from swarm_squad_ep2.api.database import (
     close_mongo_connection,
     connect_to_mongo,
     get_collection,
     is_db_connected,
 )
-from backend.fastapi.routers import batch, llms, realtime, veh2llm, vehicles
+from swarm_squad_ep2.api.routers import batch, llms, realtime, veh2llm, vehicles
 
 # Configure logging
 logger = logging.getLogger(__name__)

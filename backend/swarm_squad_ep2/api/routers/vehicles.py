@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from ..database import get_collection, is_db_connected
+from swarm_squad_ep2.api.database import get_collection, is_db_connected
 
 # Configure logging
 logger = logging.getLogger(__name__)

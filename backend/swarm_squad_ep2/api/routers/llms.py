@@ -3,8 +3,8 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException
 
-from ..database import llms_collection
-from ..models import LLMAgent, LLMMessage
+from swarm_squad_ep2.api.database import llms_collection
+from swarm_squad_ep2.api.models import LLMAgent, LLMMessage
 
 router = APIRouter(
     prefix="/llms",

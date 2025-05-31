@@ -3,8 +3,12 @@ from typing import List
 
 from fastapi import APIRouter, Query
 
-from ..database import llms_collection, veh2llm_collection, vehicles_collection
-from ..models import BatchMessageResponse, BatchStateResponse
+from swarm_squad_ep2.api.database import (
+    llms_collection,
+    veh2llm_collection,
+    vehicles_collection,
+)
+from swarm_squad_ep2.api.models import BatchMessageResponse, BatchStateResponse
 
 router = APIRouter(
     prefix="/batch",

@@ -1,19 +1,12 @@
 import asyncio
 import json
 import math
-import os
 import random
-import sys
 from datetime import datetime, timezone
 
-# Add the project root to Python path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Import create_simulation_resources directly
-from backend.fastapi.models import MessageType
-from backend.scripts.utils.client import SwarmClient
-from backend.scripts.utils.message_templates import MessageTemplate
-from backend.scripts.visualize_simulation import create_simulation_resources
+from swarm_squad_ep2.api.models import MessageType
+from swarm_squad_ep2.scripts.utils.client import SwarmClient
+from swarm_squad_ep2.scripts.utils.message_templates import MessageTemplate
 
 
 def generate_random_coordinates():
@@ -144,14 +137,6 @@ class VehicleSimulator:
         """Initialize simulator with specified number of vehicles."""
         self.client = SwarmClient()
         self.vehicles = {}
-
-        # Initialize rooms and entities using shared function
-        db = self.client.get_db()
-        try:
-            # Don't force recreate - use existing resources if they exist
-            create_simulation_resources(db, num_vehicles, force_recreate=False)
-        finally:
-            db.close()
 
         # Create vehicles
         for i in range(1, num_vehicles + 1):

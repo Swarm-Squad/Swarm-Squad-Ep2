@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException
 
-from ..database import llms_collection, veh2llm_collection, vehicles_collection
+from swarm_squad_ep2.api.database import (
+    llms_collection,
+    veh2llm_collection,
+    vehicles_collection,
+)
 
 router = APIRouter(
     prefix="/veh2llm",

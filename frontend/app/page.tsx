@@ -4,39 +4,53 @@ import { useEffect, useState } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Chat } from "@/components/chat";
 import { MessageInput } from "@/components/message-input";
-import { Room } from "@/lib/api";
-import { Users, User } from "lucide-react";
+import { Users, User, Hash } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { users, getAllRooms } from "@/lib/mock-data";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 export default function Page() {
   const [currentRoomId, setCurrentRoomId] = useState<string>("");
-  const [wsConnected, setWsConnected] = useState(false);
+  const { isConnected: wsConnected, messages: wsMessages } = useWebSocket();
   const rooms = getAllRooms();
   const currentRoom = rooms.find((room) => room.id === currentRoomId);
 
   useEffect(() => {
     if (!currentRoomId && rooms.length > 0) {
-      setCurrentRoomId(rooms[0].id);
+      // Default to the first vehicle room (v1)
+      setCurrentRoomId("v1");
     }
   }, [currentRoomId, rooms]);
 
+  // Debug logging
+  useEffect(() => {
+    console.log("WebSocket status:", wsConnected);
+    console.log("Total WebSocket messages:", wsMessages.length);
+    console.log("Current room:", currentRoomId);
+    if (wsMessages.length > 0) {
+      console.log("Latest message:", wsMessages[wsMessages.length - 1]);
+    }
+  }, [wsConnected, wsMessages, currentRoomId]);
+
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar
         rooms={rooms}
         currentRoomId={currentRoomId}
         onRoomChange={setCurrentRoomId}
       />
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-w-0">
         <div className="flex-1 flex flex-col min-w-0">
-          <div className="h-14 flex items-center justify-center px-4 border-b border-border">
-            <h1 className="text-base font-semibold flex items-center gap-2">
-              # {currentRoom?.name}
-            </h1>
+          <div className="h-14 flex-shrink-0 flex items-center justify-center px-4 border-b border-border bg-background relative">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <Hash className="h-5 w-5" />
+              {currentRoom?.name || currentRoomId}
+            </h2>
           </div>
-          <Chat roomId={currentRoomId} />
+          <div className="flex-1 overflow-hidden">
+            {currentRoomId && <Chat roomId={currentRoomId} />}
+          </div>
         </div>
         <div className="w-72 border-l border-border flex flex-col">
           <div className="h-14 flex items-center justify-center px-4 border-b border-border">

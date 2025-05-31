@@ -1,31 +1,13 @@
 import asyncio
 import json
 import logging
-import os
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict, Optional
 
 import aiohttp
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-
-from backend.fastapi.models import Base
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-# Get the project root directory
-project_root = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
-db_path = os.path.join(project_root, "backend", "fastapi", "vehicle_sim.db")
-
-# Create the engine with the correct database path
-engine = create_engine(f"sqlite:///{db_path}", echo=False)
-
-# Create tables and session
-Base.metadata.create_all(bind=engine)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 class SwarmClient:
@@ -48,17 +30,18 @@ class SwarmClient:
         self.heartbeat_interval = 25  # seconds (less than server's 30s)
         self.ws_timeout = 60  # seconds
 
-        # Setup database connection
-        self.SessionLocal = SessionLocal
-
-    def get_db(self) -> Session:
+    def get_db(self):
         """
         Get a database session.
 
+        Note: This method is kept for compatibility but not used in simulation.
+        The simulation communicates via HTTP API instead of direct database access.
+
         Returns:
-            SQLAlchemy session object
+            None - Database operations handled by the API server
         """
-        return self.SessionLocal()
+        logger.warning("Direct database access not needed - using API instead")
+        return None
 
     async def connect(self) -> bool:
         """

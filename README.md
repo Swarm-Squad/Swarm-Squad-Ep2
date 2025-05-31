@@ -28,8 +28,8 @@ swarm-squad-ep2 --help
 The CLI provides several commands to manage the vehicle simulation:
 
 ```bash
-# Install frontend dependencies
-swarm-squad-ep2 install
+# Launch both backend (fastapi) and frontend (webui)
+swarm-squad-ep2 launch
 
 # Run vehicle simulation (creates real-time data)
 swarm-squad-ep2 setup
@@ -39,15 +39,6 @@ swarm-squad-ep2 setup visualize
 
 # Run WebSocket test client (monitor communication)
 swarm-squad-ep2 setup test
-
-# Run FastAPI backend server
-swarm-squad-ep2 fastapi
-
-# Run Next.js frontend
-swarm-squad-ep2 webui
-
-# Launch both backend and frontend
-swarm-squad-ep2 launch
 ```
 
 <div align="center">
@@ -115,7 +106,7 @@ swarm-squad-ep2 launch
 
 3. **Run the application:**
    ```bash
-   uv run backend/swarm_squad_ep2/main.py
+   uv run src/swarm_squad_ep2/main.py
    ```
 
 <h2 align="center">📁 File Tree</h2>
@@ -166,56 +157,6 @@ swarm-squad-ep2 launch
  ┃ ┃ ┃ ┃ ┗ 📄page.tsx
  ┃ ┃ ┃ ┣ 📂components
  ┃ ┃ ┃ ┃ ┣ 📂ui
- ┃ ┃ ┃ ┃ ┃ ┣ 📄accordion.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄alert-dialog.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄alert.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄aspect-ratio.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄avatar.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄badge.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄breadcrumb.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄button.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄calendar.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄card.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄carousel.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄chart.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄checkbox.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄collapsible.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄command.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄context-menu.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄dialog.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄drawer.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄dropdown-menu.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄form.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄hover-card.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄input-otp.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄input.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄label.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄menubar.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄navigation-menu.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄pagination.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄popover.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄progress.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄radio-group.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄resizable.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄scroll-area.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄select.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄separator.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄sheet.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄sidebar.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄skeleton.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄slider.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄sonner.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄switch.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄table.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄tabs.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄textarea.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄toast.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄toaster.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄toggle-group.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄toggle.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄tooltip.tsx
- ┃ ┃ ┃ ┃ ┃ ┣ 📄use-mobile.tsx
- ┃ ┃ ┃ ┃ ┃ ┗ 📄use-toast.ts
  ┃ ┃ ┃ ┃ ┣ 📄category-header.tsx
  ┃ ┃ ┃ ┃ ┣ 📄chat.tsx
  ┃ ┃ ┃ ┃ ┣ 📄emoji-picker.tsx

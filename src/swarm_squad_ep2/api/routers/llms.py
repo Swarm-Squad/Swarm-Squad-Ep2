@@ -3,7 +3,7 @@ from typing import List
 
 from fastapi import APIRouter, HTTPException
 
-from swarm_squad_ep2.api.database import llms_collection
+from swarm_squad_ep2.api.database import get_collection
 from swarm_squad_ep2.api.models import LLMAgent, LLMMessage
 
 router = APIRouter(
@@ -16,13 +16,17 @@ router = APIRouter(
 @router.get("/", response_model=List[LLMAgent])
 async def get_llms():
     """Get all LLM agents"""
-    llms = await llms_collection.find().to_list(None)
+    llms_collection = get_collection("llms")
+    llms = []
+    async for llm in llms_collection.find():
+        llms.append(llm)
     return llms
 
 
 @router.get("/{agent_id}", response_model=LLMAgent)
 async def get_llm(agent_id: str):
     """Get messages for a specific LLM"""
+    llms_collection = get_collection("llms")
     llm = await llms_collection.find_one({"_id": agent_id})
     if not llm:
         raise HTTPException(status_code=404, detail="LLM agent not found")
@@ -32,6 +36,7 @@ async def get_llm(agent_id: str):
 @router.post("/{agent_id}/messages")
 async def add_llm_message(agent_id: str, message: LLMMessage):
     """Add a new message for an LLM agent"""
+    llms_collection = get_collection("llms")
     llm = await llms_collection.find_one({"_id": agent_id})
     if not llm:
         raise HTTPException(status_code=404, detail="LLM agent not found")

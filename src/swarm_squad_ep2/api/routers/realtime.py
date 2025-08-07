@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Set
 
@@ -12,6 +13,8 @@ from fastapi import (
 
 from swarm_squad_ep2.api.database import get_collection
 from swarm_squad_ep2.api.utils import ConnectionManager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["realtime"])
 
@@ -163,7 +166,7 @@ async def get_messages(
 
 @router.get("/rooms")
 async def get_rooms():
-    """Get available rooms/entities."""
+    """Get available rooms/entities with dynamic structure based on active vehicles."""
     try:
         vehicles_collection = get_collection("vehicles")
         llms_collection = get_collection("llms")
@@ -174,32 +177,89 @@ async def get_rooms():
             )
 
         rooms = []
+        vehicle_ids = []
+        llm_ids = []
 
-        # Add vehicle rooms
+        # Add master rooms (always present) - add them first
+        rooms.append({
+            "id": "master-vehicles",
+            "name": "🚗 All Vehicles",
+            "type": "master-vehicle",
+            "messages": [],
+        })
+        
+        rooms.append({
+            "id": "master-llms",
+            "name": "🤖 All LLMs", 
+            "type": "master-llm",
+            "messages": [],
+        })
+
+        # Get all active vehicles
         async for vehicle in vehicles_collection.find():
+            vehicle_id = vehicle["_id"]
+            vehicle_ids.append(vehicle_id)
             rooms.append(
                 {
-                    "id": vehicle["_id"],
-                    "name": f"Vehicle {vehicle['_id']}",
+                    "id": vehicle_id,
+                    "name": f"Vehicle {vehicle_id}",
                     "type": "vehicle",
                     "messages": [],
                 }
             )
 
-        # Add LLM rooms
+        # Get all active LLMs
         async for llm in llms_collection.find():
+            llm_id = llm["_id"]
+            llm_ids.append(llm_id)
             rooms.append(
                 {
-                    "id": llm["_id"],
-                    "name": f"LLM {llm['_id']}",
+                    "id": llm_id,
+                    "name": f"LLM {llm_id}",
                     "type": "llm",
                     "messages": [],
                 }
             )
 
+        # If no vehicles/LLMs found in database, add some default ones for testing
+        if len(vehicle_ids) == 0 and len(llm_ids) == 0:
+            logger.warning("No vehicles or LLMs found in database, adding default rooms")
+            for i in range(1, 4):  # Add default v1, v2, v3 and l1, l2, l3
+                vehicle_ids.append(f"v{i}")
+                llm_ids.append(f"l{i}")
+                rooms.append({
+                    "id": f"v{i}",
+                    "name": f"Vehicle {i}",
+                    "type": "vehicle", 
+                    "messages": [],
+                })
+                rooms.append({
+                    "id": f"l{i}",
+                    "name": f"LLM {i}",
+                    "type": "llm",
+                    "messages": [],
+                })
+
+        # Add vehicle-to-LLM rooms for each vehicle-LLM pair
+        for i, vehicle_id in enumerate(vehicle_ids):
+            if i < len(llm_ids):  # Ensure we have corresponding LLMs
+                llm_id = llm_ids[i]
+                # Extract number from vehicle ID (e.g., "v1" -> "1")
+                vehicle_num = vehicle_id.replace('v', '') if vehicle_id.startswith('v') else vehicle_id
+                llm_num = llm_id.replace('l', '') if llm_id.startswith('l') else llm_id
+                
+                rooms.append({
+                    "id": f"vl{vehicle_num}",
+                    "name": f"Veh{vehicle_num} - LLM{llm_num}",
+                    "type": "vl",
+                    "messages": [],
+                })
+
+        logger.info(f"Generated {len(rooms)} rooms for {len(vehicle_ids)} vehicles and {len(llm_ids)} LLMs")
         return rooms
 
     except Exception as e:
+        logger.error(f"Error fetching rooms: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching rooms: {str(e)}")
 
 
@@ -318,8 +378,13 @@ async def send_message(
         else:
             raise HTTPException(status_code=400, detail="Invalid entity_id")
 
+        if collection is None:
+            logger.error(f"Collection not available for entity {entity_id}")
+            raise HTTPException(status_code=500, detail="Database collection not available")
+
         # Store the message in the database
-        await collection.update_one(
+        logger.debug(f"Storing message for entity {entity_id} in room {room_id}")
+        result = await collection.update_one(
             {"_id": entity_id},
             {
                 "$push": {
@@ -333,6 +398,7 @@ async def send_message(
             },
             upsert=True,
         )
+        logger.debug(f"Database update result: matched={result.matched_count}, modified={result.modified_count}, upserted={result.upserted_id}")
 
         # Also update the entity's status if it's in the state
         if state and "status" in state:

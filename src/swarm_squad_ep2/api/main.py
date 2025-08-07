@@ -13,9 +13,10 @@ from fastapi.templating import Jinja2Templates
 
 # Import from proper package structure
 from swarm_squad_ep2.api.database import (
-    close_mongo_connection,
-    connect_to_mongo,
-    get_collection,
+    close_db_connection,
+    connect_to_db,
+    get_all_llms,
+    get_all_vehicles,
     is_db_connected,
 )
 from swarm_squad_ep2.api.routers import batch, llms, realtime, veh2llm, vehicles
@@ -31,13 +32,13 @@ TEMPLATES_DIR = Path(__file__).parent / "templates"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle events."""
-    # Startup: Connect to MongoDB
-    connection_success = await connect_to_mongo()
+    # Startup: Connect to SQLite database
+    connection_success = await connect_to_db()
     if not connection_success:
-        logger.warning("Failed to connect to MongoDB during startup")
+        logger.warning("Failed to connect to SQLite database during startup")
     yield
-    # Shutdown: Close MongoDB connection
-    await close_mongo_connection()
+    # Shutdown: Close SQLite database connection
+    await close_db_connection()
 
 
 # Create FastAPI app
@@ -126,24 +127,15 @@ async def root(request: Request):
             logger.warning("Database not connected when accessing index page")
             raise Exception("Database connection not available")
 
-        # Get collections
-        vehicles_collection = get_collection("vehicles")
-        llms_collection = get_collection("llms")
-
-        if vehicles_collection is None or llms_collection is None:
-            raise Exception("Required collections not available")
-
-        # Get all vehicles with complete state information
-        vehicles = await vehicles_collection.find().to_list(None)
-
-        # Get all LLM agents
-        llms = await llms_collection.find().to_list(None)
+        # Get all vehicles and LLMs directly from SQLite
+        vehicles = await get_all_vehicles()
+        llms = await get_all_llms()
 
         # Get recent messages from both vehicles and LLMs
         recent_messages = []
 
         # Get vehicle messages - only the 5 most recent per vehicle
-        async for vehicle in vehicles_collection.find():
+        for vehicle in vehicles:
             if vehicle.get("messages"):
                 for msg in vehicle["messages"][-5:]:
                     recent_messages.append(
@@ -156,13 +148,10 @@ async def root(request: Request):
 
                     # Update vehicle state from the latest message
                     if msg.get("state"):
-                        for v in vehicles:
-                            if v["_id"] == vehicle["_id"]:
-                                v["state"] = msg.get("state")
-                                break
+                        vehicle["state"] = msg.get("state")
 
         # Get LLM messages - only the 5 most recent per LLM
-        async for llm in llms_collection.find():
+        for llm in llms:
             if llm.get("messages"):
                 for msg in llm["messages"][-5:]:
                     recent_messages.append(

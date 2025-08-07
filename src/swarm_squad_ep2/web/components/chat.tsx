@@ -5,6 +5,45 @@ import { Car, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchMessages } from "@/lib/api";
 
+// Color palettes for different entity types
+const VEHICLE_COLORS = [
+  "#3B82F6", // Blue
+  "#10B981", // Green
+  "#F59E0B", // Yellow
+  "#EF4444", // Red
+  "#8B5CF6", // Purple
+  "#06B6D4", // Cyan
+  "#F97316", // Orange
+  "#84CC16", // Lime
+  "#EC4899", // Pink
+  "#6366F1", // Indigo
+];
+
+const LLM_COLORS = [
+  "#DC2626", // Red
+  "#7C3AED", // Violet
+  "#059669", // Emerald
+  "#D97706", // Amber
+  "#DB2777", // Rose
+  "#9333EA", // Purple
+  "#0891B2", // Sky
+  "#65A30D", // Green
+  "#BE185D", // Pink
+  "#7C2D12", // Orange
+];
+
+function getEntityColor(entityId: string): string {
+  if (entityId.startsWith("v")) {
+    const num = parseInt(entityId.slice(1)) || 1;
+    return VEHICLE_COLORS[(num - 1) % VEHICLE_COLORS.length];
+  } else if (entityId.startsWith("l")) {
+    // LLMs use the same color as their corresponding vehicle
+    const num = parseInt(entityId.slice(1)) || 1;
+    return VEHICLE_COLORS[(num - 1) % VEHICLE_COLORS.length];
+  }
+  return "#6B7280"; // Default gray
+}
+
 interface ChatMessage {
   id: string | number;
   content: string;
@@ -86,25 +125,39 @@ export function Chat({ roomId }: { roomId: string }) {
 
   // Handle incoming websocket messages
   useEffect(() => {
+    console.log(
+      `Chat component for roomId: ${roomId}, wsMessages count: ${wsMessages.length}`,
+    );
     if (!roomId || !wsMessages.length) return;
 
     // Filter messages for the current room and convert to ChatMessage format
     const newMessages = wsMessages
       .filter((msg) => {
+        console.log(`Filtering message for roomId: ${roomId}`, msg);
+
+        // Handle master rooms - show all messages of the respective type
+        if (roomId === "master-vehicles") {
+          return msg.entity_id && msg.entity_id.startsWith("v");
+        }
+        if (roomId === "master-llms") {
+          return msg.entity_id && msg.entity_id.startsWith("l");
+        }
+
         // Show messages from the specific room or related rooms
-        // For vehicle rooms (v1), show messages from v1 and vl1
-        // For LLM rooms (l1), show messages from l1 and vl1
+        // For vehicle rooms (v1), show messages from v1
         if (roomId === msg.entity_id || roomId === msg.room_id) {
           return true;
         }
+
         // Also show vehicle messages in vehicle-to-LLM rooms
-        if (
-          roomId.startsWith("vl") &&
-          msg.entity_id.startsWith("v") &&
-          roomId.slice(2) === msg.entity_id.slice(1)
-        ) {
-          return true;
+        if (roomId.startsWith("vl")) {
+          const vehicleNum = roomId.slice(2); // Extract number from vl1 -> 1
+          return (
+            msg.entity_id === `v${vehicleNum}` ||
+            msg.entity_id === `l${vehicleNum}`
+          );
         }
+
         return false;
       })
       .map((msg) => ({
@@ -118,6 +171,10 @@ export function Chat({ roomId }: { roomId: string }) {
       }));
 
     if (newMessages.length > 0) {
+      console.log(
+        `Found ${newMessages.length} new messages for roomId: ${roomId}`,
+        newMessages,
+      );
       setMessages((prev) => {
         // Avoid duplicates by checking if message ID already exists
         const existingIds = new Set(prev.map((m) => m.id));
@@ -126,18 +183,20 @@ export function Chat({ roomId }: { roomId: string }) {
         );
 
         if (uniqueNewMessages.length > 0) {
+          console.log(
+            `Adding ${uniqueNewMessages.length} unique messages to roomId: ${roomId}`,
+          );
           const combined = [...prev, ...uniqueNewMessages];
-          // Sort by timestamp and keep last 100 messages
-          return combined
-            .sort(
-              (a, b) =>
-                new Date(a.timestamp).getTime() -
-                new Date(b.timestamp).getTime(),
-            )
-            .slice(-100);
+          // Sort by timestamp - no message limit, allow continuous growth
+          return combined.sort(
+            (a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+          );
         }
         return prev;
       });
+    } else {
+      console.log(`No messages found for roomId: ${roomId} after filtering`);
     }
   }, [wsMessages, roomId]);
 
@@ -170,6 +229,7 @@ export function Chat({ roomId }: { roomId: string }) {
               ) : (
                 messages.map((message) => {
                   const isVehicle = message.message_type === "vehicle_update";
+                  const entityColor = getEntityColor(message.entity_id);
                   const colors = isVehicle
                     ? generateColor(message.entity_id)
                     : null;
@@ -179,23 +239,20 @@ export function Chat({ roomId }: { roomId: string }) {
                       <div
                         className="flex-shrink-0 w-8 h-8 sm:w-12 sm:h-12 rounded-full flex items-center justify-center"
                         style={{
-                          backgroundColor: colors?.bg || "rgb(209, 213, 219)",
+                          backgroundColor: entityColor,
                         }}
                       >
                         {isVehicle ? (
-                          <Car
-                            className="h-4 w-4 sm:h-6 sm:w-6"
-                            style={{ color: colors?.text }}
-                          />
+                          <Car className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                         ) : (
-                          <User className="h-4 w-4 sm:h-6 sm:w-6 text-gray-500" />
+                          <User className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                         )}
                       </div>
                       <div className="flex-grow">
                         <div className="flex items-baseline gap-2 flex-wrap">
                           <span
                             className="font-semibold text-sm sm:text-base"
-                            style={{ color: colors?.bg }}
+                            style={{ color: entityColor }}
                           >
                             {message.entity_id}
                           </span>
@@ -210,7 +267,7 @@ export function Chat({ roomId }: { roomId: string }) {
                               ? colorizeVehicleMessage(
                                   message.content,
                                   message.entity_id,
-                                  colors?.bg || "inherit",
+                                  entityColor,
                                 )
                               : message.content,
                           }}

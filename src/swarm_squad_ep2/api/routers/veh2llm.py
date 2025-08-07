@@ -1,10 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from swarm_squad_ep2.api.database import (
-    llms_collection,
-    veh2llm_collection,
-    vehicles_collection,
-)
+from swarm_squad_ep2.api.database import get_collection
 
 router = APIRouter(
     prefix="/veh2llm",
@@ -16,6 +12,7 @@ router = APIRouter(
 @router.get("/{vehicle_id}")
 async def get_vehicle_llm(vehicle_id: str):
     """Get corresponding LLM agent for a vehicle"""
+    veh2llm_collection = get_collection("veh2llm")
     mapping = await veh2llm_collection.find_one({"vehicle_id": vehicle_id})
     if not mapping:
         raise HTTPException(
@@ -27,6 +24,10 @@ async def get_vehicle_llm(vehicle_id: str):
 @router.post("/{vehicle_id}")
 async def assign_llm_to_vehicle(vehicle_id: str, llm_id: str):
     """Assign an LLM agent to a vehicle"""
+    vehicles_collection = get_collection("vehicles")
+    llms_collection = get_collection("llms")
+    veh2llm_collection = get_collection("veh2llm")
+    
     # Check if vehicle exists
     vehicle = await vehicles_collection.find_one({"_id": vehicle_id})
     if not vehicle:

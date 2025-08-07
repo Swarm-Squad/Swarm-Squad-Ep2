@@ -147,10 +147,42 @@ class VehicleSimulator:
         print("Starting vehicle simulation...")
         print(f"Simulating {len(self.vehicles)} vehicles")
         print("Press Ctrl+C to stop")
+        
+        # Wait for the API to be ready before starting simulation
+        import aiohttp
+        max_wait = 30  # Wait up to 30 seconds
+        wait_time = 0
+        while wait_time < max_wait:
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get("http://localhost:8000/") as response:
+                        if response.status == 200:
+                            print("✓ FastAPI server is ready")
+                            break
+            except Exception:
+                print(f"Waiting for FastAPI server... ({wait_time}s)")
+                await asyncio.sleep(2)
+                wait_time += 2
+        
+        if wait_time >= max_wait:
+            print("⚠ Warning: FastAPI server may not be ready, continuing anyway...")
 
         while True:  # Outer loop for reconnection
             try:
                 async with self.client:
+                    # Create initial LLM entities for each vehicle
+                    print("Creating LLM entities...")
+                    for vehicle_id in self.vehicles.keys():
+                        llm_id = f"l{vehicle_id[1:]}"  # Convert v1 -> l1
+                        await self.client.send_message(
+                            room_id=llm_id,
+                            entity_id=llm_id,
+                            content=f"LLM {llm_id} initialized and ready for vehicle {vehicle_id}",
+                            message_type="llm_response",
+                            state={"status": "active", "vehicle_id": vehicle_id}
+                        )
+                        print(f"Created LLM entity: {llm_id}")
+                    
                     while True:  # Inner loop for simulation
                         try:
                             for vehicle in self.vehicles.values():
@@ -164,24 +196,28 @@ class VehicleSimulator:
                                         [
                                             vehicle.v2v_room_id,  # Vehicle's own V2V room
                                             vehicle.veh2llm_room_id,  # Vehicle-to-LLM communication room
+                                            "master-vehicles",  # Master vehicle room for aggregation
                                         ]
                                         + vehicle.get_neighbor_rooms()
                                     )  # Rooms of nearby vehicles
 
                                     # Broadcast to each relevant room
                                     for room_id in set(broadcast_rooms):
-                                        await self.client.send_message(
+                                        result = await self.client.send_message(
                                             room_id=room_id,
                                             entity_id=vehicle.id,
                                             content=message["message"],
                                             message_type=message["message_type"],
                                             state=message["state"],
                                         )
-                                        print(f"\n[{room_id}] {message['message']}")
-                                        print(
-                                            "State:",
-                                            json.dumps(message["state"], indent=2),
-                                        )
+                                        if result:
+                                            print(f"\n[{room_id}] {message['message']}")
+                                            print(
+                                                "State:",
+                                                json.dumps(message["state"], indent=2),
+                                            )
+                                        else:
+                                            print(f"Failed to send message for vehicle {vehicle.id} to room {room_id}")
                                 except Exception as e:
                                     print(f"Error updating vehicle {vehicle.id}: {e}")
                                     continue
@@ -210,6 +246,6 @@ class VehicleSimulator:
 
 if __name__ == "__main__":
     try:
-        asyncio.run(VehicleSimulator(num_vehicles=3).run())
+        asyncio.run(VehicleSimulator(num_vehicles=10).run())
     except KeyboardInterrupt:
         print("\nStopping simulation...")

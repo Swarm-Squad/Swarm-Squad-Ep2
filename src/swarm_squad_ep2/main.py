@@ -15,7 +15,7 @@ from swarm_squad_ep2.cli import (
     fastapi_command,
     install_command,
     launch_command,
-    setup_command,
+    sim_command,
     webui_command,
 )
 
@@ -31,9 +31,9 @@ Examples:
   swarm-squad-ep2 install                # Install frontend dependencies (dev only)
   swarm-squad-ep2 build                  # Build frontend for production (dev only)
   swarm-squad-ep2 launch                 # Launch both backend and frontend
-  swarm-squad-ep2 setup                  # Run vehicle simulation
-  swarm-squad-ep2 setup visualize        # Run matplotlib visualization
-  swarm-squad-ep2 setup test             # Run WebSocket test client
+  swarm-squad-ep2 sim                     # Run vehicle simulation
+  swarm-squad-ep2 sim visualize          # Run matplotlib visualization
+  swarm-squad-ep2 sim test               # Run WebSocket test client
   swarm-squad-ep2 fastapi --port 8080    # Run FastAPI on custom port
   swarm-squad-ep2 webui --port 3001      # Run frontend on custom port
         """,
@@ -75,39 +75,39 @@ Examples:
     )
     build_parser.set_defaults(func=build_command)
 
-    # Setup command with subcommands
-    setup_parser = subparsers.add_parser(
-        "setup",
+    # Sim command with subcommands
+    sim_parser = subparsers.add_parser(
+        "sim",
         help="Run vehicle simulation components",
-        description="Setup and run vehicle simulation components",
+        description="Run vehicle simulation components",
     )
 
-    # Create subparsers for setup subcommands
-    setup_subparsers = setup_parser.add_subparsers(
-        dest="setup_subcommand",
-        help="Setup subcommands",
-        title="setup subcommands",
+    # Create subparsers for sim subcommands
+    sim_subparsers = sim_parser.add_subparsers(
+        dest="sim_subcommand",
+        help="Sim subcommands",
+        title="sim subcommands",
         description="Choose what to run",
     )
 
-    # Setup visualize subcommand
-    setup_visualize_parser = setup_subparsers.add_parser(
+    # Sim visualize subcommand
+    sim_visualize_parser = sim_subparsers.add_parser(
         "visualize",
         help="Run the matplotlib visualization",
         description="Start the matplotlib-based vehicle visualization",
     )
-    setup_visualize_parser.set_defaults(setup_subcommand="visualize")
+    sim_visualize_parser.set_defaults(sim_subcommand="visualize")
 
-    # Setup test subcommand
-    setup_test_parser = setup_subparsers.add_parser(
+    # Sim test subcommand
+    sim_test_parser = sim_subparsers.add_parser(
         "test",
         help="Run the WebSocket test client",
         description="Start the WebSocket test client to monitor communication",
     )
-    setup_test_parser.set_defaults(setup_subcommand="test")
+    sim_test_parser.set_defaults(sim_subcommand="test")
 
     # Set default subcommand to 'run' if none specified (but no explicit run command)
-    setup_parser.set_defaults(func=setup_command, setup_subcommand="run")
+    sim_parser.set_defaults(func=sim_command, sim_subcommand="run")
 
     # FastAPI command
     fastapi_parser = subparsers.add_parser(
@@ -142,7 +142,7 @@ Examples:
     # WebUI command
     webui_parser = subparsers.add_parser(
         "webui",
-        help="Run Next.js frontend",
+        help="Run Next.js frontend server",
         description="Start the Next.js frontend development server",
     )
     webui_parser.add_argument(

@@ -3,11 +3,7 @@ from typing import List
 
 from fastapi import APIRouter, Query
 
-from swarm_squad_ep2.api.database import (
-    llms_collection,
-    veh2llm_collection,
-    vehicles_collection,
-)
+from swarm_squad_ep2.api.database import get_collection
 from swarm_squad_ep2.api.models import BatchMessageResponse, BatchStateResponse
 
 router = APIRouter(
@@ -28,6 +24,7 @@ async def get_vehicles_states(
     ),
 ):
     """Batch fetch states for multiple vehicles"""
+    vehicles_collection = get_collection("vehicles")
     states = {}
     async for vehicle in vehicles_collection.find({"_id": {"$in": vehicle_ids}}):
         if vehicle.get("state"):
@@ -41,6 +38,7 @@ async def get_vehicles_messages(
     vehicle_ids: List[str] = Query(...), limit: int = Query(50, ge=1, le=100)
 ):
     """Batch fetch messages for multiple vehicles"""
+    vehicles_collection = get_collection("vehicles")
     messages = {}
     async for vehicle in vehicles_collection.find({"_id": {"$in": vehicle_ids}}):
         if vehicle.get("messages"):
@@ -54,6 +52,7 @@ async def get_llms_messages(
     llm_ids: List[str] = Query(...), limit: int = Query(50, ge=1, le=100)
 ):
     """Batch fetch messages for multiple LLM agents"""
+    llms_collection = get_collection("llms")
     messages = {}
     async for llm in llms_collection.find({"_id": {"$in": llm_ids}}):
         if llm.get("messages"):
@@ -65,6 +64,10 @@ async def get_llms_messages(
 @router.get("/llms/nearby/messages")
 async def get_nearby_llms_messages(llm_id: str, limit: int = Query(50, ge=1, le=100)):
     """Batch fetch messages from all nearby LLM agents"""
+    vehicles_collection = get_collection("vehicles")
+    llms_collection = get_collection("llms")
+    veh2llm_collection = get_collection("veh2llm")
+    
     # First get the vehicle associated with this LLM
     mapping = await veh2llm_collection.find_one({"llm_id": llm_id})
     if not mapping:

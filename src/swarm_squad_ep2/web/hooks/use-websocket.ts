@@ -17,6 +17,7 @@ interface VehicleMessage {
 }
 
 const RECONNECT_DELAY = 2000; // 2 seconds
+const MAX_RECONNECT_DELAY = 30000; // 30 seconds max
 const API_BASE_URL = "http://localhost:8000"; // Updated to match server port
 
 export function useWebSocket() {
@@ -27,15 +28,28 @@ export function useWebSocket() {
   const [error, setError] = useState<string | null>(null);
   const [availableRooms, setAvailableRooms] = useState<string[]>([]);
   const messageCounterRef = useRef(0); // Use ref for message counter
+  const reconnectAttempts = useRef(0);
+  const historicalMessagesLoaded = useRef(false);
+  const roomsCached = useRef(false);
 
-  // Fetch available rooms from API
+  // Fetch available rooms from API (with periodic refresh)
   const fetchAvailableRooms = useCallback(async () => {
+    console.log("Fetching rooms for WebSocket connection...");
+
     try {
       const response = await fetch(`${API_BASE_URL}/rooms`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const rooms = await response.json();
+      const text = await response.text();
+      if (!text.trim()) {
+        console.warn("Received empty response from /rooms");
+        const fallbackRooms = ["v1", "v2", "v3"];
+        setAvailableRooms(fallbackRooms);
+        roomsCached.current = true;
+        return fallbackRooms;
+      }
+      const rooms = JSON.parse(text);
       const roomIds = rooms.map((room: any) => room.id);
       console.log("Fetched available rooms:", roomIds);
       setAvailableRooms(roomIds);
@@ -48,10 +62,16 @@ export function useWebSocket() {
       setAvailableRooms(fallbackRooms);
       return fallbackRooms;
     }
-  }, []);
+  }, [availableRooms]);
 
-  // Fetch historical messages
+  // Fetch historical messages (only once)
   const fetchHistoricalMessages = useCallback(async () => {
+    // Only fetch historical messages once
+    if (historicalMessagesLoaded.current) {
+      console.log("Historical messages already loaded, skipping");
+      return;
+    }
+
     try {
       setError(null);
       const response = await fetch(`${API_BASE_URL}/messages?limit=50`);
@@ -59,7 +79,13 @@ export function useWebSocket() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const historicalMessages = await response.json();
+      const text = await response.text();
+      if (!text.trim()) {
+        console.warn("Received empty response from /messages");
+        historicalMessagesLoaded.current = true;
+        return;
+      }
+      const historicalMessages = JSON.parse(text);
 
       // Validate message format for historical messages
       const validMessages = historicalMessages.filter((msg: any) => {
@@ -78,11 +104,13 @@ export function useWebSocket() {
       );
 
       console.log(`Loaded ${validMessages.length} historical messages`);
+      historicalMessagesLoaded.current = true;
     } catch (error) {
       console.error("Error fetching historical messages:", error);
       setError(
         error instanceof Error ? error.message : "Failed to fetch messages",
       );
+      historicalMessagesLoaded.current = true; // Mark as attempted even if failed
     } finally {
       setIsLoading(false);
     }
@@ -92,12 +120,14 @@ export function useWebSocket() {
   const connectWebSocket = useCallback((rooms: string[]) => {
     if (rooms.length === 0) {
       console.warn("No rooms available for WebSocket connection");
+      console.log("WebSocket connection cancelled - no rooms");
       return null;
     }
 
     const websocketUrl = `ws://localhost:8000/ws?rooms=${rooms.join(",")}`;
     console.log("Connecting to WebSocket:", websocketUrl);
     console.log("Subscribing to rooms:", rooms);
+    console.log("Total rooms count:", rooms.length);
 
     const ws = new WebSocket(websocketUrl);
 
@@ -105,10 +135,18 @@ export function useWebSocket() {
       console.log("WebSocket connected to rooms:", rooms);
       setIsConnected(true);
       setError(null);
+      // Reset reconnection attempts on successful connection
+      reconnectAttempts.current = 0;
     };
 
     ws.onmessage = (event) => {
       try {
+        // Check if event.data is empty or null
+        if (!event.data || event.data.trim() === "") {
+          console.warn("Received empty WebSocket message, skipping");
+          return;
+        }
+
         const data = JSON.parse(event.data);
         console.log("Received WebSocket message:", data);
 
@@ -160,10 +198,22 @@ export function useWebSocket() {
 
       // Only attempt reconnect if it wasn't a manual close
       if (event.code !== 1000) {
+        // Exponential backoff with jitter
+        reconnectAttempts.current++;
+        const backoffDelay = Math.min(
+          RECONNECT_DELAY * Math.pow(2, reconnectAttempts.current - 1),
+          MAX_RECONNECT_DELAY,
+        );
+        const jitteredDelay = backoffDelay + Math.random() * 1000; // Add up to 1s jitter
+
+        console.log(
+          `Attempting to reconnect in ${Math.round(jitteredDelay / 1000)}s (attempt ${reconnectAttempts.current})`,
+        );
+
         setTimeout(() => {
           console.log("Attempting to reconnect...");
           connectWebSocket(rooms);
-        }, RECONNECT_DELAY);
+        }, jitteredDelay);
       }
     };
 
@@ -174,24 +224,75 @@ export function useWebSocket() {
   // Set up WebSocket connection and cleanup
   useEffect(() => {
     let ws: WebSocket | null = null;
+    let isMounted = true;
 
     // First fetch available rooms, then connect to WebSocket
     const initializeConnection = async () => {
-      const rooms = await fetchAvailableRooms();
-      if (rooms.length > 0) {
-        ws = connectWebSocket(rooms);
-        fetchHistoricalMessages();
+      try {
+        const rooms = await fetchAvailableRooms();
+        if (isMounted && rooms.length > 0) {
+          ws = connectWebSocket(rooms);
+          // Only fetch historical messages on initial load
+          if (!historicalMessagesLoaded.current) {
+            fetchHistoricalMessages();
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing connection:", error);
+        if (isMounted) {
+          setError("Failed to initialize connection");
+        }
       }
     };
 
     initializeConnection();
 
     return () => {
+      isMounted = false;
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.close(1000, "Component unmounting");
       }
     };
-  }, [fetchAvailableRooms, connectWebSocket, fetchHistoricalMessages]);
+  }, []); // Remove dependencies to prevent re-initialization
+
+  // Send message function
+  const sendMessage = useCallback(async (roomId: string, content: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/messages/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          room_id: roomId,
+          entity_id: "user", // User messages
+          content: content,
+          message_type: "user_message",
+          timestamp: new Date().toISOString(),
+          state: {},
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send message: ${response.status}`);
+      }
+
+      const text = await response.text();
+      let result;
+      try {
+        result = text.trim() ? JSON.parse(text) : {};
+      } catch (parseError) {
+        console.warn("Response is not valid JSON, treating as success:", text);
+        result = { success: true };
+      }
+      console.log("Message sent successfully:", result);
+      return true;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setError("Failed to send message");
+      return false;
+    }
+  }, []);
 
   return {
     messages,
@@ -200,5 +301,6 @@ export function useWebSocket() {
     isConnected,
     error,
     availableRooms,
+    sendMessage,
   };
 }

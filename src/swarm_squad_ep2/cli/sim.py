@@ -1,5 +1,5 @@
 """
-Setup command for initializing and running the vehicle simulation.
+Sim command for initializing and running the vehicle simulation.
 """
 
 import subprocess
@@ -74,7 +74,7 @@ def run_visualization(base_dir) -> int:
     print_info("Opening vehicle visualization window...")
     print_info("Make sure the FastAPI server and simulation are running first:")
     print_info("  1. swarm-squad-ep2 fastapi")
-    print_info("  2. swarm-squad-ep2 setup")
+    print_info("  2. swarm-squad-ep2 sim")
     print_info("")
     print_info("Close the matplotlib window to stop the visualization.")
     print_info("")
@@ -148,9 +148,9 @@ def run_test_client(base_dir) -> int:
         return 1
 
 
-def setup_command(args: Any) -> int:
+def sim_command(args: Any) -> int:
     """
-    Setup and run vehicle simulation components.
+    Run vehicle simulation components.
 
     Subcommands:
         run (default): Run the vehicle simulation
@@ -176,7 +176,7 @@ def setup_command(args: Any) -> int:
         # Development mode: use source directory
         if not (project_root / "pyproject.toml").exists():
             print_error(
-                "Setup command requires the source repository with pyproject.toml in development mode"
+                "Sim command requires the source repository with pyproject.toml in development mode"
             )
             return 1
 
@@ -184,7 +184,7 @@ def setup_command(args: Any) -> int:
         if not scripts_dir.exists():
             print_error(f"Source directory not found: {scripts_dir}")
             print_info(
-                "The setup command requires the source repository in development mode"
+                "The sim command requires the source repository in development mode"
             )
             return 1
     else:
@@ -198,7 +198,7 @@ def setup_command(args: Any) -> int:
             return 1
 
     # Get the subcommand (default to 'run' if none specified)
-    subcommand = getattr(args, "setup_subcommand", "run")
+    subcommand = getattr(args, "sim_subcommand", "run")
 
     if subcommand == "run":
         print_info("Starting vehicle simulation...")

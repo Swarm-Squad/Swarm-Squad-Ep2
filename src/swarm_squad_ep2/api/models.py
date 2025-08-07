@@ -3,10 +3,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
-from sqlalchemy.ext.declarative import declarative_base
-
-# Create Base for SQLAlchemy models
-Base = declarative_base()
 
 
 # Message type enum for categorizing messages

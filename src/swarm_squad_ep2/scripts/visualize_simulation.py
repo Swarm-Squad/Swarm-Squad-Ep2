@@ -367,7 +367,7 @@ class VehicleVisualizer:
             print("1. Start the FastAPI server first:")
             print("   swarm-squad-ep2 fastapi")
             print("\n2. Then start the simulation:")
-            print("   swarm-squad-ep2 setup")
+            print("   swarm-squad-ep2 sim")
             print("\n3. Finally, run this visualization")
             return
 

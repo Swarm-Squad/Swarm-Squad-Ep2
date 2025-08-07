@@ -99,7 +99,7 @@ def install_frontend_dependencies(frontend_dir: Path, force: bool = False) -> bo
 
 def install_command(args: Any) -> int:
     """
-    Install frontend dependencies and setup development environment.
+    Install frontend dependencies and set up development environment.
 
     Args:
         args: Parsed command line arguments

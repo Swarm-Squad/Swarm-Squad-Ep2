@@ -1,22 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { categories } from "@/lib/mock-data";
 import { Hash, LayoutList } from "lucide-react";
 import { CategoryHeader } from "./category-header";
+
+interface Room {
+  id: string;
+  name: string;
+  type: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  rooms: Room[];
+}
 
 interface SidebarProps {
   currentRoomId: string;
   onRoomChange: (roomId: string) => void;
-  rooms: Room[];
+  categories: Category[];
 }
 
-export function Sidebar({ currentRoomId, onRoomChange, rooms }: SidebarProps) {
+export function Sidebar({
+  currentRoomId,
+  onRoomChange,
+  categories,
+}: SidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
-  >(Object.fromEntries(categories.map((category) => [category.id, true])));
+  >({});
+
+  // Update expanded categories when categories change
+  useEffect(() => {
+    if (categories.length > 0) {
+      setExpandedCategories(
+        Object.fromEntries(categories.map((category) => [category.id, true])),
+      );
+    }
+  }, [categories]);
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories((prev) => ({

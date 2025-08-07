@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[512],{6512:(e,u,r)=>{r.r(u),r.d(u,{default:()=>l});var n=r(2847),t=r(5032);function l(e){let u=(0,n.useRef)(null),r=(0,n.useRef)(null);return r.current&&r.current.update(e),(0,n.useEffect)(()=>(r.current=new(0,t.LC)({...e,ref:u}),()=>{r.current=null}),[]),n.createElement("div",{ref:u})}}}]);

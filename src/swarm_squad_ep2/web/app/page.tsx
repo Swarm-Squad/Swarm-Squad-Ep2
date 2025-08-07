@@ -6,22 +6,162 @@ import { Chat } from "@/components/chat";
 import { MessageInput } from "@/components/message-input";
 import { Users, User, Hash } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { users, getAllRooms } from "@/lib/mock-data";
+import { getUsers, getRoomStructure } from "@/lib/mock-data";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { fetchRooms } from "@/lib/api";
 
 export default function Page() {
   const [currentRoomId, setCurrentRoomId] = useState<string>("");
-  const { isConnected: wsConnected, messages: wsMessages } = useWebSocket();
-  const rooms = getAllRooms();
-  const currentRoom = rooms.find((room) => room.id === currentRoomId);
+  const [roomCategories, setRoomCategories] = useState<any[]>([]);
+  const [allRooms, setAllRooms] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
 
+  const {
+    isConnected: wsConnected,
+    messages: wsMessages,
+    sendMessage,
+  } = useWebSocket();
+
+  const currentRoom = allRooms.find((room) => room.id === currentRoomId);
+
+  // Fetch rooms from API
   useEffect(() => {
-    if (!currentRoomId && rooms.length > 0) {
-      // Default to the first vehicle room (v1)
-      setCurrentRoomId("v1");
+    const loadRooms = async () => {
+      try {
+        setIsLoadingRooms(true);
+        console.log("Fetching rooms from API...");
+        const rooms = await fetchRooms();
+        console.log("Received rooms from API:", rooms);
+        setAllRooms(rooms);
+
+        // If no rooms received from API, use fallback
+        if (!rooms || rooms.length === 0) {
+          console.warn("No rooms received from API, using fallback");
+          const fallbackCategories = getRoomStructure(3);
+          setRoomCategories(fallbackCategories);
+          setAllRooms(fallbackCategories.flatMap((cat) => cat.rooms));
+          setUsers(getUsers(3));
+          if (!currentRoomId) {
+            setCurrentRoomId("master-vehicles");
+          }
+          return;
+        }
+
+        // Organize rooms into categories
+        const categories = [
+          {
+            id: "1",
+            name: "VEHICLE CHANNELS",
+            rooms: rooms.filter(
+              (room) =>
+                room.type === "master-vehicle" || room.type === "vehicle",
+            ),
+          },
+          {
+            id: "2",
+            name: "LLM CHANNELS",
+            rooms: rooms.filter(
+              (room) => room.type === "master-llm" || room.type === "llm",
+            ),
+          },
+          {
+            id: "3",
+            name: "VEH2LLM CHANNELS",
+            rooms: rooms.filter((room) => room.type === "vl"),
+          },
+        ];
+        console.log("Organized categories:", categories);
+        setRoomCategories(categories);
+
+        // Generate users based on detected rooms
+        const vehicleCount = rooms.filter((r) => r.type === "vehicle").length;
+        console.log("Detected vehicle count:", vehicleCount);
+        const dynamicUsers = getUsers(vehicleCount);
+        setUsers(dynamicUsers);
+
+        // Set default room to master-vehicles if available, otherwise first room
+        if (!currentRoomId && rooms.length > 0) {
+          const defaultRoom =
+            rooms.find((r) => r.id === "master-vehicles") || rooms[0];
+          setCurrentRoomId(defaultRoom.id);
+        }
+      } catch (error) {
+        console.error("Failed to load rooms:", error);
+        // Fallback to default structure if API fails
+        const fallbackCategories = getRoomStructure(3);
+        setRoomCategories(fallbackCategories);
+        setAllRooms(fallbackCategories.flatMap((cat) => cat.rooms));
+        setUsers(getUsers(3)); // Default fallback users
+        if (!currentRoomId) {
+          setCurrentRoomId("master-vehicles");
+        }
+      } finally {
+        setIsLoadingRooms(false);
+      }
+    };
+
+    loadRooms();
+  }, [currentRoomId]);
+
+  // Refresh rooms when connection status changes and periodically
+  useEffect(() => {
+    if (wsConnected) {
+      // Reload rooms when websocket connects and periodically
+      const loadRooms = async () => {
+        try {
+          console.log("Refreshing rooms due to WebSocket connection change");
+          const rooms = await fetchRooms();
+          if (rooms.length > allRooms.length) {
+            console.log(
+              `Room count increased from ${allRooms.length} to ${rooms.length}, updating`,
+            );
+            setAllRooms(rooms);
+
+            // Re-organize categories with new rooms
+            const categories = [
+              {
+                id: "1",
+                name: "VEHICLE CHANNELS",
+                rooms: rooms.filter(
+                  (room) =>
+                    room.type === "master-vehicle" || room.type === "vehicle",
+                ),
+              },
+              {
+                id: "2",
+                name: "LLM CHANNELS",
+                rooms: rooms.filter(
+                  (room) => room.type === "master-llm" || room.type === "llm",
+                ),
+              },
+              {
+                id: "3",
+                name: "VEH2LLM CHANNELS",
+                rooms: rooms.filter((room) => room.type === "vl"),
+              },
+            ];
+            setRoomCategories(categories);
+
+            // Update users
+            const vehicleCount = rooms.filter(
+              (r) => r.type === "vehicle",
+            ).length;
+            setUsers(getUsers(vehicleCount));
+          }
+        } catch (error) {
+          console.error("Failed to reload rooms:", error);
+        }
+      };
+
+      loadRooms();
+
+      // Set up periodic refresh every 10 seconds
+      const interval = setInterval(loadRooms, 10000);
+      return () => clearInterval(interval);
     }
-  }, [currentRoomId, rooms]);
+  }, [wsConnected, allRooms.length]);
 
   // Debug logging
   useEffect(() => {
@@ -36,7 +176,7 @@ export default function Page() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
-        rooms={rooms}
+        categories={roomCategories}
         currentRoomId={currentRoomId}
         onRoomChange={setCurrentRoomId}
       />
@@ -90,7 +230,11 @@ export default function Page() {
             </p>
           </div>
           <div className="flex-1 relative px-8">
-            <MessageInput />
+            <MessageInput
+              currentRoomId={currentRoomId}
+              onSendMessage={sendMessage}
+              isConnected={wsConnected}
+            />
           </div>
           <div className="w-72 border-l border-border h-full flex flex-col items-center justify-center px-4 gap-3">
             <div

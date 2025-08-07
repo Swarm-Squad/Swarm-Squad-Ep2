@@ -32,13 +32,13 @@ The CLI provides several commands to manage the vehicle simulation:
 swarm-squad-ep2 launch
 
 # Run vehicle simulation (creates real-time data)
-swarm-squad-ep2 setup
+swarm-squad-ep2 sim
 
 # Run matplotlib visualization (requires simulation to be running)
-swarm-squad-ep2 setup visualize
+swarm-squad-ep2 sim visualize
 
 # Run WebSocket test client (monitor communication)
-swarm-squad-ep2 setup test
+swarm-squad-ep2 sim test
 ```
 
 <div align="center">
@@ -139,7 +139,7 @@ swarm-squad-ep2 setup test
  ┃ ┃ ┃ ┣ 📄fastapi.py
  ┃ ┃ ┃ ┣ 📄install.py
  ┃ ┃ ┃ ┣ 📄launch.py
- ┃ ┃ ┃ ┣ 📄setup.py
+ ┃ ┃ ┃ ┣ 📄sim.py
  ┃ ┃ ┃ ┣ 📄utils.py
  ┃ ┃ ┃ ┗ 📄webui.py
  ┃ ┃ ┣ 📂scripts

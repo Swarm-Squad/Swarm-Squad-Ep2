@@ -1,6 +1,6 @@
 [project]
 name = "swarm-squad-ep2"
-version = "0.1.5"
+version = "0.1.6"
 description = "Swarm Squad Ep2: The Digital Dialogue"
 authors = [{ name = "Sang Buster", email = "hello@singsongaftermath.com" }]
 readme = "README.md"

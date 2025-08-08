@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Set
@@ -289,20 +290,22 @@ async def get_rooms():
                     "messages": [],
                 })
 
-        # Add vehicle-to-LLM rooms for each vehicle-LLM pair
-        for i, vehicle_id in enumerate(vehicle_ids):
-            if i < len(llm_ids):  # Ensure we have corresponding LLMs
-                llm_id = llm_ids[i]
-                # Extract number from vehicle ID (e.g., "v1" -> "1")
-                vehicle_num = vehicle_id.replace('v', '') if vehicle_id.startswith('v') else vehicle_id
-                llm_num = llm_id.replace('l', '') if llm_id.startswith('l') else llm_id
-                
-                rooms.append({
-                    "id": f"vl{vehicle_num}",
-                    "name": f"Veh{vehicle_num} - LLM{llm_num}",
-                    "type": "vl",
-                    "messages": [],
-                })
+        # Add vehicle-to-LLM rooms for each vehicle (more robust pairing)
+        for vehicle_id in vehicle_ids:
+            # Extract number from vehicle ID (e.g., "v1" -> "1")
+            vehicle_num = vehicle_id.replace('v', '') if vehicle_id.startswith('v') else vehicle_id
+            expected_llm_id = f"l{vehicle_num}"
+            
+            # Check if corresponding LLM exists
+            llm_exists = expected_llm_id in llm_ids
+            
+            rooms.append({
+                "id": f"vl{vehicle_num}",
+                "name": f"Veh{vehicle_num} - LLM{vehicle_num}" + ("" if llm_exists else " (LLM pending)"),
+                "type": "vl",
+                "messages": [],
+                "llm_ready": llm_exists,
+            })
 
         logger.info(f"Generated {len(rooms)} rooms for {len(vehicle_ids)} vehicles and {len(llm_ids)} LLMs")
         return rooms
@@ -373,22 +376,52 @@ async def websocket_endpoint(websocket: WebSocket, rooms: str = Query(None)):
 
     try:
         while True:
-            data = await websocket.receive_json()
+            try:
+                # Use a timeout to prevent indefinite blocking
+                data = await asyncio.wait_for(websocket.receive_json(), timeout=30.0)
+                
+                # Handle heartbeat/ping messages
+                if isinstance(data, str) and data == "ping":
+                    await websocket.send_text("pong")
+                    continue
+                
+                # Handle regular messages
+                if isinstance(data, dict):
+                    # Check if message has a target room
+                    target_room = data.get("room_id")
 
-            # Check if message has a target room
-            target_room = data.get("room_id")
-
-            if target_room:
-                # Broadcast to specific room
-                await room_manager.broadcast_to_room(data, target_room)
-            else:
-                # Broadcast to all rooms this client is connected to
-                for room in room_list:
-                    await room_manager.broadcast_to_room(data, room)
+                    if target_room:
+                        # Broadcast to specific room
+                        await room_manager.broadcast_to_room(data, target_room)
+                    else:
+                        # Broadcast to all rooms this client is connected to
+                        for room in room_list:
+                            await room_manager.broadcast_to_room(data, room)
+                            
+            except asyncio.TimeoutError:
+                # Send ping to check if client is still alive
+                try:
+                    await websocket.ping()
+                except Exception:
+                    # Client is not responding to ping, disconnect
+                    break
+            except WebSocketDisconnect:
+                # Handle disconnect within the loop
+                logger.info("WebSocket client disconnected during receive")
+                break
+            except Exception as e:
+                # Handle other websocket message errors
+                logger.error(f"Error processing WebSocket message: {e}")
+                # Check if it's a disconnect-related error
+                if "disconnect" in str(e).lower():
+                    break
+                continue
+                
     except WebSocketDisconnect:
-        room_manager.disconnect(websocket)
+        logger.info("WebSocket client disconnected normally")
     except Exception as e:
-        print(f"WebSocket error: {e}")
+        logger.error(f"WebSocket error: {e}")
+    finally:
         room_manager.disconnect(websocket)
 
 

@@ -17,6 +17,7 @@ export default function Page() {
   const [allRooms, setAllRooms] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     isConnected: wsConnected,
@@ -107,10 +108,14 @@ export default function Page() {
 
   // Refresh rooms when connection status changes and periodically
   useEffect(() => {
-    if (wsConnected) {
+    if (wsConnected && !isRefreshing) {
       // Reload rooms when websocket connects and periodically
       const loadRooms = async () => {
+        // Prevent concurrent refresh calls
+        if (isRefreshing) return;
+
         try {
+          setIsRefreshing(true);
           console.log("Refreshing rooms due to WebSocket connection change");
           const rooms = await fetchRooms();
           if (rooms.length > allRooms.length) {
@@ -152,6 +157,8 @@ export default function Page() {
           }
         } catch (error) {
           console.error("Failed to reload rooms:", error);
+        } finally {
+          setIsRefreshing(false);
         }
       };
 
@@ -161,7 +168,7 @@ export default function Page() {
       const interval = setInterval(loadRooms, 10000);
       return () => clearInterval(interval);
     }
-  }, [wsConnected, allRooms.length]);
+  }, [wsConnected, allRooms.length, isRefreshing]);
 
   // Debug logging
   useEffect(() => {
@@ -174,7 +181,7 @@ export default function Page() {
   }, [wsConnected, wsMessages, currentRoomId]);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-[calc(100vh-5.5rem)] overflow-hidden">
       <Sidebar
         categories={roomCategories}
         currentRoomId={currentRoomId}

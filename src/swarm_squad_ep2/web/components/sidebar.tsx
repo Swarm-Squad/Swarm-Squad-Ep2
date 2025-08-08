@@ -50,7 +50,7 @@ export function Sidebar({
   };
 
   return (
-    <div className="hidden md:flex w-72 border-r border-border flex-col h-screen bg-background">
+    <div className="hidden md:flex w-72 border-r border-border flex-col bg-background h-[calc(100vh-5.5rem)]">
       <div className="h-14 flex items-center justify-center px-4 border-b border-border">
         <h2 className="text-base font-semibold flex items-center gap-2">
           <LayoutList className="h-5 w-5" />

@@ -31,9 +31,17 @@ export function useWebSocket() {
   const reconnectAttempts = useRef(0);
   const historicalMessagesLoaded = useRef(false);
   const roomsCached = useRef(false);
+  const fetchingRooms = useRef(false); // Prevent concurrent room fetching
 
   // Fetch available rooms from API (with periodic refresh)
   const fetchAvailableRooms = useCallback(async () => {
+    // Prevent concurrent room fetching
+    if (fetchingRooms.current) {
+      console.log("Room fetching already in progress, skipping...");
+      return availableRooms;
+    }
+
+    fetchingRooms.current = true;
     console.log("Fetching rooms for WebSocket connection...");
 
     try {
@@ -49,7 +57,36 @@ export function useWebSocket() {
         roomsCached.current = true;
         return fallbackRooms;
       }
-      const rooms = JSON.parse(text);
+
+      // Check for HTML response
+      if (text.trim().startsWith("<")) {
+        console.error(
+          "🚨 RECEIVED HTML INSTEAD OF JSON in useWebSocket:",
+          text.substring(0, 500),
+        );
+        // Use safe fallback instead of throwing to avoid unhandled promise rejections
+        const fallbackRooms = ["v1", "v2", "v3"];
+        setAvailableRooms(fallbackRooms);
+        roomsCached.current = true;
+        return fallbackRooms;
+      }
+
+      let rooms;
+      try {
+        rooms = JSON.parse(text);
+      } catch (parseError) {
+        console.error(
+          "🚨 JSON PARSE ERROR in useWebSocket fetchRooms:",
+          parseError,
+        );
+        console.error("Raw response that failed to parse:", text);
+        console.error("Response length:", text.length);
+        // Use safe fallback instead of throwing to avoid unhandled promise rejections
+        const fallbackRooms = ["v1", "v2", "v3"];
+        setAvailableRooms(fallbackRooms);
+        roomsCached.current = true;
+        return fallbackRooms;
+      }
       const roomIds = rooms.map((room: any) => room.id);
       console.log("Fetched available rooms:", roomIds);
       setAvailableRooms(roomIds);
@@ -61,6 +98,8 @@ export function useWebSocket() {
       console.log("Using fallback rooms:", fallbackRooms);
       setAvailableRooms(fallbackRooms);
       return fallbackRooms;
+    } finally {
+      fetchingRooms.current = false;
     }
   }, [availableRooms]);
 
@@ -80,12 +119,33 @@ export function useWebSocket() {
       }
 
       const text = await response.text();
+
+      // Check for HTML response
+      if (text.trim().startsWith("<")) {
+        console.error(
+          "🚨 RECEIVED HTML INSTEAD OF JSON in fetchHistoricalMessages:",
+          text.substring(0, 500),
+        );
+        historicalMessagesLoaded.current = true;
+        return;
+      }
+
       if (!text.trim()) {
         console.warn("Received empty response from /messages");
         historicalMessagesLoaded.current = true;
         return;
       }
-      const historicalMessages = JSON.parse(text);
+      let historicalMessages;
+      try {
+        historicalMessages = JSON.parse(text);
+      } catch (parseError) {
+        console.error(
+          "🚨 JSON PARSE ERROR in fetchHistoricalMessages:",
+          parseError,
+        );
+        console.error("Raw response that failed to parse:", text);
+        return;
+      }
 
       // Validate message format for historical messages
       const validMessages = historicalMessages.filter((msg: any) => {
@@ -137,6 +197,23 @@ export function useWebSocket() {
       setError(null);
       // Reset reconnection attempts on successful connection
       reconnectAttempts.current = 0;
+
+      // Start heartbeat to keep connection alive
+      const heartbeatInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          try {
+            ws.send(JSON.stringify("ping"));
+          } catch (error) {
+            console.error("Failed to send heartbeat:", error);
+            clearInterval(heartbeatInterval);
+          }
+        } else {
+          clearInterval(heartbeatInterval);
+        }
+      }, 25000); // Send heartbeat every 25 seconds
+
+      // Store interval reference to clean up later
+      (ws as any).heartbeatInterval = heartbeatInterval;
     };
 
     ws.onmessage = (event) => {
@@ -147,7 +224,36 @@ export function useWebSocket() {
           return;
         }
 
-        const data = JSON.parse(event.data);
+        // Additional check for non-string data
+        if (typeof event.data !== "string") {
+          console.warn(
+            "Received non-string WebSocket message:",
+            typeof event.data,
+            event.data,
+          );
+          return;
+        }
+
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch (parseError) {
+          console.error(
+            "🚨 JSON PARSE ERROR in WebSocket message:",
+            parseError,
+          );
+          console.error("Raw WebSocket data that failed to parse:", event.data);
+          console.error("Data type:", typeof event.data);
+          console.error("Data length:", event.data.length);
+          return;
+        }
+
+        // Handle heartbeat pong responses
+        if (data === "pong") {
+          console.debug("Received heartbeat pong");
+          return;
+        }
+
         console.log("Received WebSocket message:", data);
 
         // Handle both message formats (from API and real-time)
@@ -195,6 +301,11 @@ export function useWebSocket() {
     ws.onclose = (event) => {
       console.log("WebSocket disconnected:", event.code, event.reason);
       setIsConnected(false);
+
+      // Clean up heartbeat interval
+      if ((ws as any).heartbeatInterval) {
+        clearInterval((ws as any).heartbeatInterval);
+      }
 
       // Only attempt reconnect if it wasn't a manual close
       if (event.code !== 1000) {
@@ -249,8 +360,15 @@ export function useWebSocket() {
 
     return () => {
       isMounted = false;
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.close(1000, "Component unmounting");
+      if (ws) {
+        // Clean up heartbeat interval
+        if ((ws as any).heartbeatInterval) {
+          clearInterval((ws as any).heartbeatInterval);
+        }
+        // Close WebSocket connection
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close(1000, "Component unmounting");
+        }
       }
     };
   }, []); // Remove dependencies to prevent re-initialization
@@ -278,11 +396,25 @@ export function useWebSocket() {
       }
 
       const text = await response.text();
+
+      // Check for HTML response
+      if (text.trim().startsWith("<")) {
+        console.error(
+          "🚨 RECEIVED HTML INSTEAD OF JSON in sendMessage:",
+          text.substring(0, 500),
+        );
+        return { success: true }; // Assume success for HTML responses
+      }
+
       let result;
       try {
         result = text.trim() ? JSON.parse(text) : {};
       } catch (parseError) {
-        console.warn("Response is not valid JSON, treating as success:", text);
+        console.error(
+          "🚨 JSON PARSE ERROR in sendMessage response:",
+          parseError,
+        );
+        console.error("Raw response that failed to parse:", text);
         result = { success: true };
       }
       console.log("Message sent successfully:", result);

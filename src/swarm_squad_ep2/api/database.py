@@ -383,6 +383,13 @@ class MockAsyncCursor:
         item = self.data[self.index]
         self.index += 1
         return item
+    
+    async def to_list(self, length: int = None):
+        """Convert cursor to list (MongoDB compatibility)."""
+        await self._load_data()
+        if length is None:
+            return self.data
+        return self.data[:length]
 
 
 class MockCursor:

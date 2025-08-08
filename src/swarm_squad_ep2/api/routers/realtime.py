@@ -93,33 +93,82 @@ async def get_messages(
 
         if room_id:
             # Get messages for specific room/entity
-            if room_id.startswith("v"):
+            if room_id.startswith("master-"):
+                # Master room - aggregate messages from all entities
+                if room_id == "master-vehicles":
+                    # Get recent messages from all vehicles
+                    async for vehicle in vehicles_collection.find():
+                        if vehicle.get("messages"):
+                            for msg in vehicle["messages"][-5:]:  # Last 5 from each vehicle
+                                all_messages.append(
+                                    {
+                                        "id": f"{vehicle['_id']}-{msg.get('timestamp', '')}",
+                                        "room_id": room_id,
+                                        "entity_id": vehicle["_id"],
+                                        "content": msg.get("message", ""),
+                                        "timestamp": msg.get("timestamp", ""),
+                                        "message_type": msg.get("message_type", "vehicle_update"),
+                                        "state": msg.get("state", {}),
+                                    }
+                                )
+                elif room_id == "master-llms":
+                    # Get recent messages from all LLMs
+                    async for llm in llms_collection.find():
+                        if llm.get("messages"):
+                            for msg in llm["messages"][-5:]:  # Last 5 from each LLM
+                                all_messages.append(
+                                    {
+                                        "id": f"{llm['_id']}-{msg.get('timestamp', '')}",
+                                        "room_id": room_id,
+                                        "entity_id": llm["_id"],
+                                        "content": msg.get("message", ""),
+                                        "timestamp": msg.get("timestamp", ""),
+                                        "message_type": msg.get("message_type", "llm_response"),
+                                        "state": msg.get("state", {}),
+                                    }
+                                )
+            elif room_id.startswith("v"):
                 # Vehicle room
                 entity_id = room_id.replace(
                     "vl", "v"
                 )  # Handle both 'v1' and 'vl1' formats
                 collection = vehicles_collection
+                
+                entity = await collection.find_one({"_id": entity_id})
+                if entity and entity.get("messages"):
+                    for msg in entity["messages"][-limit:]:
+                        all_messages.append(
+                            {
+                                "id": f"{entity_id}-{msg.get('timestamp', '')}",
+                                "room_id": room_id,
+                                "entity_id": entity_id,
+                                "content": msg.get("message", ""),
+                                "timestamp": msg.get("timestamp", ""),
+                                "message_type": msg.get("message_type", "update"),
+                                "state": msg.get("state", {}),
+                            }
+                        )
             elif room_id.startswith("l"):
                 # LLM room
                 entity_id = room_id
                 collection = llms_collection
+                
+                entity = await collection.find_one({"_id": entity_id})
+                if entity and entity.get("messages"):
+                    for msg in entity["messages"][-limit:]:
+                        all_messages.append(
+                            {
+                                "id": f"{entity_id}-{msg.get('timestamp', '')}",
+                                "room_id": room_id,
+                                "entity_id": entity_id,
+                                "content": msg.get("message", ""),
+                                "timestamp": msg.get("timestamp", ""),
+                                "message_type": msg.get("message_type", "update"),
+                                "state": msg.get("state", {}),
+                            }
+                        )
             else:
                 raise HTTPException(status_code=400, detail="Invalid room_id format")
-
-            entity = await collection.find_one({"_id": entity_id})
-            if entity and entity.get("messages"):
-                for msg in entity["messages"][-limit:]:
-                    all_messages.append(
-                        {
-                            "id": f"{entity_id}-{msg.get('timestamp', '')}",
-                            "room_id": room_id,
-                            "entity_id": entity_id,
-                            "content": msg.get("message", ""),
-                            "timestamp": msg.get("timestamp", ""),
-                            "message_type": msg.get("message_type", "update"),
-                            "state": msg.get("state", {}),
-                        }
-                    )
         else:
             # Get recent messages from all entities
             async for vehicle in vehicles_collection.find():

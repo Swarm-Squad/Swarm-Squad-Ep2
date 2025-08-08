@@ -142,6 +142,52 @@ class VehicleSimulator:
         for i in range(1, num_vehicles + 1):
             self.vehicles[f"v{i}"] = Vehicle(f"v{i}", simulator=self)
 
+    async def _update_vehicle(self, vehicle: Vehicle):
+        """Update a single vehicle and send its messages concurrently."""
+        try:
+            # Update vehicle state
+            vehicle.update()
+            message = vehicle.to_message()
+
+            # Get list of rooms to broadcast to
+            broadcast_rooms = (
+                [
+                    vehicle.v2v_room_id,  # Vehicle's own V2V room
+                    vehicle.veh2llm_room_id,  # Vehicle-to-LLM communication room
+                    "master-vehicles",  # Master vehicle room for aggregation
+                ]
+                + vehicle.get_neighbor_rooms()
+            )  # Rooms of nearby vehicles
+
+            # Send messages to all rooms concurrently
+            send_tasks = []
+            for room_id in set(broadcast_rooms):
+                task = self.client.send_message(
+                    room_id=room_id,
+                    entity_id=vehicle.id,
+                    content=message["message"],
+                    message_type=message["message_type"],
+                    state=message["state"],
+                )
+                send_tasks.append(task)
+            
+            # Wait for all sends to complete
+            results = await asyncio.gather(*send_tasks, return_exceptions=True)
+            
+            # Log results
+            for i, result in enumerate(results):
+                room_id = list(set(broadcast_rooms))[i]
+                if isinstance(result, Exception):
+                    print(f"Failed to send message for vehicle {vehicle.id} to room {room_id}: {result}")
+                elif result:
+                    print(f"\n[{room_id}] {message['message']}")
+                    print("State:", json.dumps(message["state"], indent=2))
+                else:
+                    print(f"Failed to send message for vehicle {vehicle.id} to room {room_id}")
+                    
+        except Exception as e:
+            print(f"Error updating vehicle {vehicle.id}: {e}")
+
     async def run(self):
         """Run the simulation."""
         print("Starting vehicle simulation...")
@@ -185,42 +231,14 @@ class VehicleSimulator:
                     
                     while True:  # Inner loop for simulation
                         try:
+                            # Process all vehicles concurrently
+                            tasks = []
                             for vehicle in self.vehicles.values():
-                                try:
-                                    # Update vehicle state
-                                    vehicle.update()
-                                    message = vehicle.to_message()
-
-                                    # Get list of rooms to broadcast to
-                                    broadcast_rooms = (
-                                        [
-                                            vehicle.v2v_room_id,  # Vehicle's own V2V room
-                                            vehicle.veh2llm_room_id,  # Vehicle-to-LLM communication room
-                                            "master-vehicles",  # Master vehicle room for aggregation
-                                        ]
-                                        + vehicle.get_neighbor_rooms()
-                                    )  # Rooms of nearby vehicles
-
-                                    # Broadcast to each relevant room
-                                    for room_id in set(broadcast_rooms):
-                                        result = await self.client.send_message(
-                                            room_id=room_id,
-                                            entity_id=vehicle.id,
-                                            content=message["message"],
-                                            message_type=message["message_type"],
-                                            state=message["state"],
-                                        )
-                                        if result:
-                                            print(f"\n[{room_id}] {message['message']}")
-                                            print(
-                                                "State:",
-                                                json.dumps(message["state"], indent=2),
-                                            )
-                                        else:
-                                            print(f"Failed to send message for vehicle {vehicle.id} to room {room_id}")
-                                except Exception as e:
-                                    print(f"Error updating vehicle {vehicle.id}: {e}")
-                                    continue
+                                task = self._update_vehicle(vehicle)
+                                tasks.append(task)
+                            
+                            # Execute all vehicle updates concurrently
+                            await asyncio.gather(*tasks, return_exceptions=True)
 
                             # Wait before next update
                             await asyncio.sleep(0.25)  # Update 4x more frequently

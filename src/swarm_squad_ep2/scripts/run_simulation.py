@@ -5,7 +5,7 @@ from swarm_squad_ep2.scripts.simulator import VehicleSimulator
 
 async def main():
     """Run the vehicle simulation."""
-    simulator = VehicleSimulator(num_vehicles=3)
+    simulator = VehicleSimulator(num_vehicles=10)
     await simulator.run()
 
 

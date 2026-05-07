@@ -18,6 +18,7 @@
 
 # Frontend Next.js
 **/.next/
+**/out/
 **/build/
 
 # Frontend debug
